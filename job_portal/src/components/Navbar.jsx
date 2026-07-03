@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 // import { Briefcase, Menu, X } from "lucide-react";
 import "../styles/Navbar.css";
 
@@ -15,12 +16,12 @@ export default function Navbar() {
   return (
     <nav className={`landing-navbar ${scrolled ? "landing-navbar--scrolled" : ""}`}>
       <div className="landing-navbar__container">
-        <a href="/" className="landing-navbar__logo">
+        <Link to="/" className="landing-navbar__logo">
           <span className="landing-navbar__logo-icon">
             {/* <Briefcase size={20} strokeWidth={2.5} /> */}
           </span>
           CareerHub
-        </a>
+        </Link>
 
         <ul className="landing-navbar__links">
           <li><a href="#jobs" className="landing-navbar__link">Jobs</a></li>
@@ -30,8 +31,8 @@ export default function Navbar() {
         </ul>
 
         <div className="landing-navbar__actions">
-          <a href="#" className="landing-navbar__btn landing-navbar__btn--ghost">Sign In</a>
-          <a href="#" className="landing-navbar__btn landing-navbar__btn--primary">Get Started</a>
+          <Link to="/login" className="landing-navbar__btn landing-navbar__btn--ghost">Sign In</Link>
+          <Link to="/register" className="landing-navbar__btn landing-navbar__btn--primary">Get Started</Link>
           <button
             className="landing-navbar__mobile-toggle"
             onClick={() => setMenuOpen(!menuOpen)}

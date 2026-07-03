@@ -1,0 +1,112 @@
+.skill-capsules {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  min-height: 52px;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skill-capsules:focus-within {
+  border-color: oklch(0.55 0.18 255 / 60%);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px oklch(0.55 0.18 255 / 20%);
+}
+
+.skill-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: oklch(0.55 0.18 255 / 22%);
+  border: 1px solid oklch(0.55 0.18 255 / 40%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: background 0.2s ease, border-color 0.2s ease, padding 0.2s ease;
+}
+
+.skill-capsule:hover {
+  background: oklch(0.55 0.18 255 / 32%);
+  border-color: oklch(0.55 0.18 255 / 55%);
+  padding-right: 6px;
+}
+
+.skill-capsule__label {
+  line-height: 1.2;
+}
+
+.skill-capsule__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.2s ease, opacity 0.2s ease;
+}
+
+.skill-capsule:hover .skill-capsule__actions {
+  max-width: 48px;
+  opacity: 1;
+}
+
+.skill-capsule__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.skill-capsule__btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(1.08);
+}
+
+.skill-capsule__btn--delete:hover {
+  background: oklch(0.58 0.22 25 / 50%);
+}
+
+.skill-capsule__edit {
+  padding: 6px 12px;
+  border-radius: 100px;
+  border: 1px solid oklch(0.55 0.18 255 / 60%);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-family: var(--font-body);
+  outline: none;
+  min-width: 80px;
+}
+
+.skill-capsules__input {
+  flex: 1;
+  min-width: 140px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  outline: none;
+  padding: 4px 0;
+}
+
+.skill-capsules__input::placeholder {
+  color: oklch(0.6 0.03 270);
+}

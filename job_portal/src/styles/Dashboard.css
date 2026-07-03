@@ -1,0 +1,312 @@
+.dashboard {
+  padding: 40px 24px 80px;
+  background: linear-gradient(180deg, var(--background) 0%, oklch(0.97 0.005 270) 100%);
+  min-height: calc(100vh - 72px);
+}
+
+.dashboard__container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.dashboard__hero {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.dashboard__label,
+.dashboard__section-label {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 100px;
+  background: oklch(0.55 0.18 255 / 8%);
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+  font-family: var(--font-body);
+}
+
+.dashboard__title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.dashboard__subtitle {
+  font-size: 1.05rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 560px;
+  font-family: var(--font-body);
+}
+
+.dashboard__profile-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 32px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, oklch(0.14 0.06 260), oklch(0.2 0.09 265));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dashboard__profile-info h2 {
+  font-size: 1.125rem;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.dashboard__profile-info p {
+  font-size: 0.9375rem;
+  color: oklch(0.75 0.03 270);
+  margin: 0 0 16px;
+  line-height: 1.5;
+  font-family: var(--font-body);
+}
+
+.dashboard__profile-btn {
+  display: inline-flex;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, oklch(0.65 0.14 45), oklch(0.55 0.16 40));
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: var(--font-body);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard__profile-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px oklch(0.55 0.16 40 / 35%);
+}
+
+.dashboard__section {
+  margin-bottom: 48px;
+}
+
+.dashboard__section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard__section-title {
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.dashboard__view-all {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: var(--font-body);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.dashboard__view-all:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: oklch(0.55 0.18 255 / 5%);
+}
+
+.dashboard__jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.dashboard__jobs-grid--full {
+  margin-top: 8px;
+}
+
+.dashboard__page-header {
+  margin-bottom: 32px;
+}
+
+.dashboard__back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: var(--font-body);
+}
+
+.dashboard__back-link:hover {
+  text-decoration: underline;
+}
+
+.dashboard__applications {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.application-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.25s ease;
+}
+
+.application-card:hover {
+  border-color: oklch(0.55 0.18 255 / 25%);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.08);
+}
+
+.application-card__main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.application-card__logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.application-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0 0 4px;
+}
+
+.application-card__company {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0 0 4px;
+  font-family: var(--font-body);
+}
+
+.application-card__date {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin: 0;
+  font-family: var(--font-body);
+}
+
+.application-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.application-card__status {
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.application-card__status--applied {
+  background: oklch(0.55 0.18 255 / 12%);
+  color: oklch(0.45 0.18 255);
+}
+
+.application-card__status--review {
+  background: oklch(0.75 0.12 85 / 15%);
+  color: oklch(0.5 0.12 75);
+}
+
+.application-card__status--interview {
+  background: oklch(0.55 0.14 300 / 12%);
+  color: oklch(0.45 0.14 300);
+}
+
+.application-card__status--offer {
+  background: oklch(0.65 0.12 145 / 12%);
+  color: oklch(0.45 0.12 145);
+}
+
+.application-card__status--rejected {
+  background: oklch(0.58 0.22 25 / 12%);
+  color: oklch(0.5 0.2 25);
+}
+
+.application-card__view {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.application-card__view:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: oklch(0.55 0.18 255 / 5%);
+}
+
+@media (max-width: 900px) {
+  .dashboard__hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard__profile-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .application-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .application-card__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dashboard__jobs-grid {
+    grid-template-columns: 1fr;
+  }
+}
