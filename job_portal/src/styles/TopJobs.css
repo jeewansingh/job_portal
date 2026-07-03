@@ -1,0 +1,224 @@
+/* Top Jobs Section Styles */
+.top-jobs {
+  padding: 100px 24px;
+  background: var(--background);
+}
+
+.top-jobs__container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.top-jobs__header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.top-jobs__label {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 100px;
+  background: oklch(0.55 0.18 255 / 8%);
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+  font-family: var(--font-body);
+}
+
+.top-jobs__title {
+  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.top-jobs__subtitle {
+  font-size: 1.05rem;
+  color: var(--muted-foreground);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-family: var(--font-body);
+}
+
+.top-jobs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.job-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.job-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
+  border-color: oklch(0.55 0.18 255 / 25%);
+}
+
+.job-card__featured {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, oklch(0.65 0.14 45), oklch(0.55 0.16 40));
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom-left-radius: 12px;
+}
+
+.job-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.job-card__logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.job-card__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-card__company {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  margin: 0 0 4px;
+  font-family: var(--font-body);
+}
+
+.job-card__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.job-card__details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.job-card__detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+}
+
+.job-card__tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.job-card__tag {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+}
+
+.job-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.job-card__salary {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+.job-card__salary-range {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.job-card__time {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+}
+
+.top-jobs__cta {
+  text-align: center;
+  margin-top: 48px;
+}
+
+.top-jobs__btn {
+  padding: 14px 36px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-jobs__btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: oklch(0.55 0.18 255 / 5%);
+}
+
+@media (max-width: 768px) {
+  .top-jobs {
+    padding: 64px 20px;
+  }
+
+  .top-jobs__grid {
+    grid-template-columns: 1fr;
+  }
+}
