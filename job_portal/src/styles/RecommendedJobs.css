@@ -1,0 +1,76 @@
+.recommended-jobs-page {
+  padding: 40px 24px 80px;
+  background: linear-gradient(180deg, var(--background) 0%, oklch(0.97 0.005 270) 100%);
+  min-height: calc(100vh - 72px);
+}
+
+.recommended-jobs-page__container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.recommended-jobs-page__header {
+  margin-bottom: 36px;
+}
+
+.recommended-jobs-page__filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.recommended-jobs-page__filter-input,
+.recommended-jobs-page__filter-select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.recommended-jobs-page__results-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 24px;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+}
+
+.recommended-jobs-page__pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.recommended-jobs-page__pagination-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.recommended-jobs-page__pagination-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.recommended-jobs-page__pagination-status {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .recommended-jobs-page__filters {
+    grid-template-columns: 1fr;
+  }
+}

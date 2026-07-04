@@ -24,10 +24,9 @@ export default function Navbar() {
         </Link>
 
         <ul className="landing-navbar__links">
-          <li><a href="#jobs" className="landing-navbar__link">Jobs</a></li>
-          <li><a href="#industries" className="landing-navbar__link">Industries</a></li>
-          <li><a href="#stats" className="landing-navbar__link">Companies</a></li>
-          <li><a href="#" className="landing-navbar__link">Salaries</a></li>
+          <li><Link to="/browse-jobs" className="landing-navbar__link">Browse Jobs</Link></li>
+          <li><Link to="/recommended-jobs" className="landing-navbar__link">Recommended Jobs</Link></li>
+          <li><Link to="/industries" className="landing-navbar__link">Industries</Link></li>
         </ul>
 
         <div className="landing-navbar__actions">

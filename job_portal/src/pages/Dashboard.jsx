@@ -66,7 +66,7 @@ export default function Dashboard() {
 
             <div className="dashboard__jobs-grid">
               {topJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
+                <JobCard key={job.id} job={job} href={`/jobs/${job.id}`} />
               ))}
             </div>
           </section>
@@ -77,6 +77,9 @@ export default function Dashboard() {
                 <span className="dashboard__section-label">Activity</span>
                 <h2 className="dashboard__section-title">Recent Applications</h2>
               </div>
+              <Link to="/my-applications" className="dashboard__view-all">
+                View All
+              </Link>
             </div>
 
             <div className="dashboard__applications">
@@ -108,9 +111,9 @@ export default function Dashboard() {
                     >
                       {application.status}
                     </span>
-                    <button type="button" className="application-card__view">
+                    <Link to={`/jobs/${application.jobId}`} className="application-card__view">
                       View
-                    </button>
+                    </Link>
                   </div>
                 </article>
               ))}

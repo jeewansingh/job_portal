@@ -54,16 +54,36 @@ export default function DashboardNavbar() {
               Recommended Jobs
             </NavLink>
           </li>
-          {/* <li>
+          <li>
             <NavLink
-              to="/profile"
+              to="/browse-jobs"
               className={({ isActive }) =>
                 `dashboard-navbar__link ${isActive ? "dashboard-navbar__link--active" : ""}`
               }
             >
-              Profile
+              Browse Jobs
             </NavLink>
-          </li> */}
+          </li>
+          <li>
+            <NavLink
+              to="/my-applications"
+              className={({ isActive }) =>
+                `dashboard-navbar__link ${isActive ? "dashboard-navbar__link--active" : ""}`
+              }
+            >
+              My Applications
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/industries"
+              className={({ isActive }) =>
+                `dashboard-navbar__link ${isActive ? "dashboard-navbar__link--active" : ""}`
+              }
+            >
+              Industries
+            </NavLink>
+          </li>
         </ul>
 
         <div className="dashboard-navbar__actions">

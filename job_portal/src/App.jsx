@@ -6,6 +6,10 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import RecommendedJobs from "./pages/RecommendedJobs";
+import BrowseJobs from "./pages/BrowseJobs";
+import MyApplications from "./pages/MyApplications";
+import Industries from "./pages/Industries";
+import IndustryJobs from "./pages/IndustryJobs";
 import JobDetails from "./pages/JobDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -42,6 +46,42 @@ function App() {
           element={
             <ProtectedRoute>
               <RecommendedJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/browse-jobs"
+          element={
+            <ProtectedRoute>
+              <BrowseJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-applications"
+          element={
+            <ProtectedRoute>
+              <MyApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/industries"
+          element={
+            <ProtectedRoute>
+              <Industries />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/industries/:industrySlug"
+          element={
+            <ProtectedRoute>
+              <IndustryJobs />
             </ProtectedRoute>
           }
         />

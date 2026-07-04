@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import "../styles/TopJobs.css";
 
-export default function JobCard({ job, href }) {
+export default function JobCard({ job, href, showMatchBadge = true }) {
   const cardContent = (
     <article className="job-card">
-      {job.featured && <span className="job-card__featured">Featured</span>}
+      {showMatchBadge && job.matchScore !== undefined && (
+        <span className="job-card__match-badge">Match score: {job.matchScore}%</span>
+      )}
 
       <div className="job-card__header">
         <div className="job-card__logo" style={{ background: job.logoColor }}>
@@ -28,8 +30,6 @@ export default function JobCard({ job, href }) {
           </span>
         ))}
       </div>
-
-      <div className="job-card__match-score">Match score: {job.matchScore}%</div>
 
       <div className="job-card__footer">
         <div>

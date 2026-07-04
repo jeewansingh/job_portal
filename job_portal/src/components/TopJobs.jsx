@@ -19,7 +19,7 @@ export default function TopJobs() {
 
         <div className="top-jobs__grid">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard key={job.id} job={job} href={`/jobs/${job.id}`} showMatchBadge={false} />
           ))}
         </div>
 

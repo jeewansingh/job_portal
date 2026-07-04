@@ -1,6 +1,7 @@
 export const recentApplications = [
   {
     id: 1,
+    jobId: 1,
     company: "Stripe",
     logoColor: "linear-gradient(135deg, oklch(0.5 0.12 255), oklch(0.55 0.14 270))",
     logoLetter: "S",
@@ -11,6 +12,7 @@ export const recentApplications = [
   },
   {
     id: 2,
+    jobId: 3,
     company: "Notion",
     logoColor: "linear-gradient(135deg, oklch(0.1 0.05 260), oklch(0.15 0.06 270))",
     logoLetter: "N",
@@ -21,6 +23,7 @@ export const recentApplications = [
   },
   {
     id: 3,
+    jobId: 5,
     company: "Linear",
     logoColor: "linear-gradient(135deg, oklch(0.45 0.1 255), oklch(0.5 0.12 265))",
     logoLetter: "L",
@@ -31,6 +34,7 @@ export const recentApplications = [
   },
   {
     id: 4,
+    jobId: 8,
     company: "Microsoft",
     logoColor: "linear-gradient(135deg, oklch(0.5 0.12 255), oklch(0.45 0.14 265))",
     logoLetter: "M",
@@ -41,6 +45,7 @@ export const recentApplications = [
   },
   {
     id: 5,
+    jobId: 2,
     company: "Airbnb",
     logoColor: "linear-gradient(135deg, oklch(0.55 0.12 25), oklch(0.6 0.1 30))",
     logoLetter: "A",

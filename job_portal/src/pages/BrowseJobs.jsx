@@ -3,11 +3,11 @@ import { Link } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import JobCard from "../components/JobCard";
 import { recommendedJobs } from "../data/recommendedJobs";
-import "../styles/RecommendedJobs.css";
+import "../styles/BrowseJobs.css";
 
 const PAGE_SIZE = 12;
 
-export default function RecommendedJobs() {
+export default function BrowseJobs() {
   const [titleQuery, setTitleQuery] = useState("");
   const [companyQuery, setCompanyQuery] = useState("");
   const [jobType, setJobType] = useState("All");
@@ -37,33 +37,33 @@ export default function RecommendedJobs() {
 
   return (
     <DashboardLayout>
-      <div className="recommended-jobs-page">
-        <div className="recommended-jobs-page__container">
-          <section className="recommended-jobs-page__header">
-            <span className="dashboard__label">For You</span>
-            <h1 className="dashboard__title">Recommended Jobs</h1>
+      <div className="browse-jobs-page">
+        <div className="browse-jobs-page__container">
+          <section className="browse-jobs-page__header">
+            <span className="dashboard__label">Browse</span>
+            <h1 className="dashboard__title">Browse Jobs</h1>
             <p className="dashboard__subtitle">
-              Roles matched to your skills, experience, and preferred job types.
+              Explore opportunities across industries and discover the right fit.
             </p>
             <Link to="/dashboard" className="dashboard__back-link">
               ← Back to Dashboard
             </Link>
           </section>
 
-          <div className="recommended-jobs-page__filters">
+          <div className="browse-jobs-page__filters">
             <input
-              className="recommended-jobs-page__filter-input"
+              className="browse-jobs-page__filter-input"
               placeholder="Filter by job title"
               value={titleQuery}
               onChange={(event) => setTitleQuery(event.target.value)}
             />
             <input
-              className="recommended-jobs-page__filter-input"
+              className="browse-jobs-page__filter-input"
               placeholder="Filter by company"
               value={companyQuery}
               onChange={(event) => setCompanyQuery(event.target.value)}
             />
-            <select className="recommended-jobs-page__filter-select" value={jobType} onChange={(event) => setJobType(event.target.value)}>
+            <select className="browse-jobs-page__filter-select" value={jobType} onChange={(event) => setJobType(event.target.value)}>
               {jobTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
@@ -72,7 +72,7 @@ export default function RecommendedJobs() {
             </select>
           </div>
 
-          <div className="recommended-jobs-page__results-meta">
+          <div className="browse-jobs-page__results-meta">
             <span>{filteredJobs.length} jobs found</span>
             <span>Showing {paginatedJobs.length} per page</span>
           </div>
@@ -80,21 +80,21 @@ export default function RecommendedJobs() {
           {paginatedJobs.length > 0 ? (
             <div className="dashboard__jobs-grid dashboard__jobs-grid--full">
               {paginatedJobs.map((job) => (
-                <JobCard key={job.id} job={job} href={`/jobs/${job.id}`} />
+                <JobCard key={job.id} job={job} href={`/jobs/${job.id}`} showMatchBadge={false} />
               ))}
             </div>
           ) : (
             <div className="dashboard__empty-state">No jobs match your filters right now.</div>
           )}
 
-          <div className="recommended-jobs-page__pagination">
-            <button className="recommended-jobs-page__pagination-btn" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page === 1}>
+          <div className="browse-jobs-page__pagination">
+            <button className="browse-jobs-page__pagination-btn" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page === 1}>
               Previous
             </button>
-            <span className="recommended-jobs-page__pagination-status">
+            <span className="browse-jobs-page__pagination-status">
               Page {page} of {totalPages}
             </span>
-            <button className="recommended-jobs-page__pagination-btn" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page === totalPages}>
+            <button className="browse-jobs-page__pagination-btn" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page === totalPages}>
               Next
             </button>
           </div>
