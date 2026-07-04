@@ -1,7 +1,8 @@
+import { Link } from "react-router-dom";
 import "../styles/TopJobs.css";
 
-export default function JobCard({ job }) {
-  return (
+export default function JobCard({ job, href }) {
+  const cardContent = (
     <article className="job-card">
       {job.featured && <span className="job-card__featured">Featured</span>}
 
@@ -28,6 +29,8 @@ export default function JobCard({ job }) {
         ))}
       </div>
 
+      <div className="job-card__match-score">Match score: {job.matchScore}%</div>
+
       <div className="job-card__footer">
         <div>
           <div className="job-card__salary">{job.salary}</div>
@@ -37,4 +40,14 @@ export default function JobCard({ job }) {
       </div>
     </article>
   );
+
+  if (href) {
+    return (
+      <Link to={href} className="job-card-link">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }

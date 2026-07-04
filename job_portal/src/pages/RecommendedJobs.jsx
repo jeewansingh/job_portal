@@ -1,10 +1,40 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import JobCard from "../components/JobCard";
 import { recommendedJobs } from "../data/recommendedJobs";
 import "../styles/Dashboard.css";
 
+const PAGE_SIZE = 15;
+
 export default function RecommendedJobs() {
+  const [titleQuery, setTitleQuery] = useState("");
+  const [companyQuery, setCompanyQuery] = useState("");
+  const [jobType, setJobType] = useState("All");
+  const [page, setPage] = useState(1);
+
+  const jobTypes = useMemo(() => ["All", ...new Set(recommendedJobs.map((job) => job.type))], []);
+
+  const filteredJobs = useMemo(() => {
+    const normalizedTitle = titleQuery.trim().toLowerCase();
+    const normalizedCompany = companyQuery.trim().toLowerCase();
+
+    return recommendedJobs.filter((job) => {
+      const matchesTitle = !normalizedTitle || job.title.toLowerCase().includes(normalizedTitle);
+      const matchesCompany = !normalizedCompany || job.company.toLowerCase().includes(normalizedCompany);
+      const matchesType = jobType === "All" || job.type === jobType;
+
+      return matchesTitle && matchesCompany && matchesType;
+    });
+  }, [companyQuery, jobType, titleQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [companyQuery, jobType, titleQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
+  const paginatedJobs = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <DashboardLayout>
       <div className="dashboard">
@@ -20,10 +50,53 @@ export default function RecommendedJobs() {
             </Link>
           </section>
 
-          <div className="dashboard__jobs-grid dashboard__jobs-grid--full">
-            {recommendedJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
+          <div className="dashboard__filters">
+            <input
+              className="dashboard__filter-input"
+              placeholder="Filter by job title"
+              value={titleQuery}
+              onChange={(event) => setTitleQuery(event.target.value)}
+            />
+            <input
+              className="dashboard__filter-input"
+              placeholder="Filter by company"
+              value={companyQuery}
+              onChange={(event) => setCompanyQuery(event.target.value)}
+            />
+            <select className="dashboard__filter-select" value={jobType} onChange={(event) => setJobType(event.target.value)}>
+              {jobTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="dashboard__results-meta">
+            <span>{filteredJobs.length} jobs found</span>
+            <span>Showing {paginatedJobs.length} per page</span>
+          </div>
+
+          {paginatedJobs.length > 0 ? (
+            <div className="dashboard__jobs-grid dashboard__jobs-grid--full">
+              {paginatedJobs.map((job) => (
+                <JobCard key={job.id} job={job} href={`/jobs/${job.id}`} />
+              ))}
+            </div>
+          ) : (
+            <div className="dashboard__empty-state">No jobs match your filters right now.</div>
+          )}
+
+          <div className="dashboard__pagination">
+            <button className="dashboard__pagination-btn" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page === 1}>
+              Previous
+            </button>
+            <span className="dashboard__pagination-status">
+              Page {page} of {totalPages}
+            </span>
+            <button className="dashboard__pagination-btn" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page === totalPages}>
+              Next
+            </button>
           </div>
         </div>
       </div>

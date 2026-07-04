@@ -12,6 +12,13 @@ export const recommendedJobs = [
     tags: ["React", "TypeScript", "Remote"],
     posted: "2 days ago",
     featured: true,
+    matchScore: 96,
+    overview: ["Hybrid collaboration", "High-impact web platform", "Remote-friendly team"],
+    description:
+      "Own the frontend experience for a fast-moving payments platform and help shape the next generation of developer tooling.",
+    specification: "5+ years in modern frontend development, production experience with React and TypeScript, strong design systems knowledge.",
+    requiredSkills: ["React", "TypeScript", "Testing", "Design Systems"],
+    companyDescription: "Stripe is a global payments infrastructure company building economic infrastructure for the internet.",
   },
   {
     id: 2,
@@ -26,6 +33,13 @@ export const recommendedJobs = [
     tags: ["Figma", "Design Systems"],
     posted: "3 days ago",
     featured: false,
+    matchScore: 93,
+    overview: ["Design strategy", "Cross-functional product work", "Global user base"],
+    description:
+      "Lead experience design for a core traveler journey and influence product direction across surfaces.",
+    specification: "Strong portfolio, deep Figma prototyping, experience working with product and engineering teams.",
+    requiredSkills: ["Figma", "UX Strategy", "Design Systems", "Research"],
+    companyDescription: "Airbnb is a pioneer in the travel and hospitality ecosystem, helping people belong anywhere.",
   },
   {
     id: 3,
@@ -40,6 +54,13 @@ export const recommendedJobs = [
     tags: ["Go", "Kubernetes", "AWS"],
     posted: "1 day ago",
     featured: true,
+    matchScore: 91,
+    overview: ["Cloud infrastructure", "Platform reliability", "Developer productivity"],
+    description:
+      "Scale the internal infrastructure powering Notion’s platform and improve reliability for global teams.",
+    specification: "Experience building distributed systems, Go proficiency, and familiarity with Kubernetes and AWS.",
+    requiredSkills: ["Go", "Kubernetes", "AWS", "Distributed Systems"],
+    companyDescription: "Notion is an all-in-one workspace for notes, tasks, documents, and collaboration.",
   },
   {
     id: 4,
@@ -54,6 +75,13 @@ export const recommendedJobs = [
     tags: ["Leadership", "Scaling"],
     posted: "5 days ago",
     featured: false,
+    matchScore: 88,
+    overview: ["Team leadership", "Platform initiatives", "Operational excellence"],
+    description:
+      "Guide a high-performing engineering organization and help build the platform foundations for the next era of design tools.",
+    specification: "Track record of leading engineering teams, system design expertise, and communication skills.",
+    requiredSkills: ["Leadership", "System Design", "Hiring", "Execution"],
+    companyDescription: "Figma is a collaborative design platform used by product teams around the world.",
   },
   {
     id: 5,
@@ -68,6 +96,13 @@ export const recommendedJobs = [
     tags: ["Rust", "TypeScript", "Remote"],
     posted: "12 hours ago",
     featured: true,
+    matchScore: 95,
+    overview: ["Senior technical leadership", "High-scale architecture", "Remote-first culture"],
+    description:
+      "Join Linear as a staff engineer and help define the architecture behind the next generation of product experiences.",
+    specification: "Deep expertise in system design, backend engineering, and strong mentoring skills.",
+    requiredSkills: ["Rust", "TypeScript", "Architecture", "Leadership"],
+    companyDescription: "Linear builds software for modern product teams focused on clarity, speed, and design quality.",
   },
   {
     id: 6,
@@ -82,6 +117,13 @@ export const recommendedJobs = [
     tags: ["Community", "Content"],
     posted: "4 days ago",
     featured: false,
+    matchScore: 90,
+    overview: ["Developer advocacy", "Community growth", "Technical storytelling"],
+    description:
+      "Shape the developer experience narrative and partner with the community to create standout content.",
+    specification: "Excellent public speaking, technical writing, and community-building experience.",
+    requiredSkills: ["Community", "Content", "Public Speaking", "Developer Advocacy"],
+    companyDescription: "Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.",
   },
   {
     id: 7,
@@ -96,6 +138,13 @@ export const recommendedJobs = [
     tags: ["React", "JavaScript"],
     posted: "1 week ago",
     featured: false,
+    matchScore: 92,
+    overview: ["Web application delivery", "Cross-team collaboration", "Product iteration"],
+    description:
+      "Build polished user interfaces for a global product and work with design, product, and QA teams.",
+    specification: "Comfortable with React, JavaScript, and component-driven development.",
+    requiredSkills: ["React", "JavaScript", "CSS", "UI Development"],
+    companyDescription: "Google is a global technology company focused on organizing the world’s information and making it accessible.",
   },
   {
     id: 8,
@@ -110,6 +159,13 @@ export const recommendedJobs = [
     tags: ["Node.js", "Azure", "Remote"],
     posted: "6 days ago",
     featured: true,
+    matchScore: 94,
+    overview: ["API development", "Cloud services", "Scalable systems"],
+    description:
+      "Help build and optimize backend services that power customer-facing experiences at scale.",
+    specification: "Lead backend development with Node.js and Azure, and experience with distributed systems.",
+    requiredSkills: ["Node.js", "Azure", "APIs", "Microservices"],
+    companyDescription: "Microsoft builds platforms and tools that empower every person and organization on the planet.",
   },
   {
     id: 9,
@@ -124,6 +180,13 @@ export const recommendedJobs = [
     tags: ["Figma", "UI Design"],
     posted: "3 days ago",
     featured: false,
+    matchScore: 89,
+    overview: ["Design systems", "User-centered design", "Product collaboration"],
+    description:
+      "Create thoughtful product experiences and strengthen the visual language of a fast-growing creative platform.",
+    specification: "Portfolio of polished interfaces, Figma expertise, and UX research experience.",
+    requiredSkills: ["Figma", "UI Design", "UX Research", "Wireframing"],
+    companyDescription: "OpenAI is an AI research and deployment company focused on advancing safe and beneficial artificial intelligence.",
   },
   {
     id: 10,
@@ -138,6 +201,13 @@ export const recommendedJobs = [
     tags: ["Ruby", "React", "GraphQL"],
     posted: "2 days ago",
     featured: false,
+    matchScore: 87,
+    overview: ["Product engineering", "Full-stack ownership", "Remote-first collaboration"],
+    description:
+      "Work across frontend and backend systems to build delightful commerce experiences for merchants.",
+    specification: "Experience with modern JS/TS stacks, Ruby, and GraphQL is a plus.",
+    requiredSkills: ["Ruby", "React", "GraphQL", "APIs"],
+    companyDescription: "Shopify is a commerce platform that empowers entrepreneurs and businesses worldwide.",
   },
   {
     id: 11,
@@ -152,6 +222,13 @@ export const recommendedJobs = [
     tags: ["Python", "Spark", "SQL"],
     posted: "4 days ago",
     featured: false,
+    matchScore: 86,
+    overview: ["Data pipelines", "Analytics infrastructure", "Cross-functional impact"],
+    description:
+      "Build reliable data systems and power the analytics layer for a global audio platform.",
+    specification: "Experience with Python, Spark, SQL, and cloud data platforms.",
+    requiredSkills: ["Python", "Spark", "SQL", "ETL"],
+    companyDescription: "Spotify is a global audio streaming platform with a mission to unlock the potential of human creativity.",
   },
   {
     id: 12,
@@ -166,5 +243,12 @@ export const recommendedJobs = [
     tags: ["Swift", "iOS", "Mobile"],
     posted: "1 day ago",
     featured: true,
+    matchScore: 97,
+    overview: ["Mobile engineering", "High-quality consumer apps", "Shared design language"],
+    description:
+      "Build and refine experiences on Netflix’s mobile applications used by millions of users worldwide.",
+    specification: "Strong iOS development background, Swift expertise, and a strong product mindset.",
+    requiredSkills: ["Swift", "iOS", "Mobile", "Performance"],
+    companyDescription: "Netflix is a global entertainment service with a reputation for bold storytelling and innovation.",
   },
 ];

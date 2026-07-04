@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import RecommendedJobs from "./pages/RecommendedJobs";
+import JobDetails from "./pages/JobDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import "./App.css";
@@ -44,6 +45,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/jobs/:jobId" element={<JobDetails />} />
       </Routes>
     </BrowserRouter>
   );

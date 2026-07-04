@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useUser } from "../context/UserContext";
@@ -8,6 +8,7 @@ import "../styles/Auth.css";
 export default function Login() {
   const { login } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -30,7 +31,12 @@ export default function Login() {
     console.log("Login JSON:", JSON.stringify(payload));
 
     login(payload.email);
-    navigate("/dashboard");
+
+    const params = new URLSearchParams(location.search);
+    const redirectTo = params.get("redirect");
+    const safeRedirect = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+
+    navigate(safeRedirect);
   };
 
   return (
