@@ -1,0 +1,107 @@
+.recruiter-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 24px 18px;
+  background: rgba(13, 16, 28, 0.96);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.recruiter-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: #ffffff;
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.recruiter-sidebar__brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, oklch(0.55 0.18 255), oklch(0.48 0.2 265));
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.recruiter-sidebar__brand strong,
+.recruiter-sidebar__brand small {
+  display: block;
+}
+
+.recruiter-sidebar__brand strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.recruiter-sidebar__brand small {
+  color: oklch(0.72 0.03 270);
+  font-size: 0.8rem;
+  margin-top: 2px;
+  font-family: var(--font-body);
+}
+
+.recruiter-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.recruiter-sidebar__link {
+  text-decoration: none;
+  color: oklch(0.82 0.02 270);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.recruiter-sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.recruiter-sidebar__link--active {
+  background: rgba(95, 116, 255, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(95, 116, 255, 0.24);
+}
+
+.recruiter-sidebar__link--future {
+  opacity: 0.75;
+}
+
+.recruiter-sidebar__logout {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .recruiter-sidebar {
+    position: static;
+    height: auto;
+  }
+
+  .recruiter-sidebar__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

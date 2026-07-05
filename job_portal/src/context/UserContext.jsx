@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { calculateProfileCompletion } from "../utils/profile";
 
@@ -14,7 +15,7 @@ function readStoredUser() {
   }
 }
 
-function createUserFromLogin(email) {
+function createUserFromLogin(email, role = "candidate") {
   const namePart = email.split("@")[0] || "User";
   const fullName = namePart
     .split(/[._-]/)
@@ -38,6 +39,7 @@ function createUserFromLogin(email) {
     resumePdf: null,
     profilePicture: null,
     isLoggedIn: true,
+    role,
   };
 }
 
@@ -57,23 +59,24 @@ export function UserProvider({ children }) {
     [user]
   );
 
-  const login = (email) => {
+  const login = (email, role = "candidate") => {
     const stored = readStoredUser();
     if (stored?.email === email.trim()) {
-      setUser({ ...stored, isLoggedIn: true });
+      setUser({ ...stored, isLoggedIn: true, role: stored.role || role });
       return;
     }
 
-    setUser(createUserFromLogin(email.trim()));
+    setUser(createUserFromLogin(email.trim(), role));
   };
 
-  const register = (profile) => {
+  const register = (profile, role = "candidate") => {
     setUser({
       ...profile,
       password: undefined,
       confirmPassword: undefined,
       agreedToTerms: undefined,
       isLoggedIn: true,
+      role,
     });
   };
 

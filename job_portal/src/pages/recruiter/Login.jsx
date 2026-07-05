@@ -5,7 +5,7 @@ import Footer from "../../components/Footer";
 import { useUser } from "../../context/UserContext";
 import "../../styles/Auth.css";
 
-export default function Login() {
+export default function RecruiterLogin() {
   const { login } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,14 +27,15 @@ export default function Login() {
       password: form.password,
     };
 
-    console.log("Login payload (ready to send):", payload);
-    console.log("Login JSON:", JSON.stringify(payload));
+    console.log("Recruiter login payload (ready to send):", payload);
+    console.log("Recruiter login JSON:", JSON.stringify(payload));
 
-    login(payload.email, "candidate");
+    login(payload.email, "recruiter");
 
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get("redirect");
-    const safeRedirect = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+    const safeRedirect =
+      redirectTo && redirectTo.startsWith("/") ? redirectTo : "/recruiter/dashboard";
 
     navigate(safeRedirect);
   };
@@ -50,16 +51,16 @@ export default function Login() {
 
         <div className="auth-page__container">
           <form className="auth-card" onSubmit={handleSubmit}>
-            <span className="auth-card__badge">Sign In</span>
+            <span className="auth-card__badge">Recruiter Access</span>
 
             <h1 className="auth-card__title">Welcome back</h1>
             <p className="auth-card__subtitle">
-              Sign in to continue your job search
+              Sign in to manage open roles, review applicants, and keep hiring moving.
             </p>
 
             <div className="auth-field">
               <label htmlFor="email">
-                Email <span className="auth-required">*</span>
+                Work Email <span className="auth-required">*</span>
               </label>
               <input
                 type="email"
@@ -67,7 +68,7 @@ export default function Login() {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
+                placeholder="name@company.com"
                 autoComplete="email"
                 required
               />
@@ -90,12 +91,12 @@ export default function Login() {
             </div>
 
             <button type="submit" className="auth-card__btn">
-              Sign In
+              Sign In as Recruiter
             </button>
 
             <p className="auth-card__footer">
-              Don&apos;t have an account?{" "}
-              <Link to="/register">Register here</Link>
+              Don&apos;t have a recruiter account yet?{" "}
+              <Link to="/recruiter/register">Register here</Link>
             </p>
           </form>
         </div>

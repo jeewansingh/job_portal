@@ -1,0 +1,361 @@
+.recruiter-post-job {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(95, 116, 255, 0.14), transparent 28%),
+    linear-gradient(180deg, var(--background) 0%, oklch(0.97 0.005 270) 100%);
+}
+
+.recruiter-post-job__main {
+  padding: 28px 28px 56px;
+  min-width: 0;
+}
+
+.recruiter-post-job__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, oklch(0.13 0.05 260) 0%, oklch(0.2 0.08 265) 100%);
+  color: #ffffff;
+  box-shadow: 0 24px 55px -18px rgba(21, 31, 53, 0.28);
+  margin-bottom: 24px;
+}
+
+.recruiter-post-job__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: oklch(0.85 0.08 255);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.recruiter-post-job__title {
+  margin: 14px 0 10px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.recruiter-post-job__subtitle {
+  margin: 0;
+  max-width: 760px;
+  color: oklch(0.76 0.03 270);
+  font-size: 1.03rem;
+  line-height: 1.7;
+  font-family: var(--font-body);
+}
+
+.recruiter-post-job__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.recruiter-post-job__form {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 16px 40px -22px rgba(15, 23, 42, 0.18);
+}
+
+.recruiter-post-job__section {
+  padding-top: 22px;
+  margin-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.recruiter-post-job__section--compact {
+  padding-top: 18px;
+  margin-top: 18px;
+}
+
+.recruiter-post-job__section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.recruiter-post-job__section h2 {
+  margin: 0 0 18px;
+  color: var(--foreground);
+  font-size: 1.2rem;
+}
+
+.recruiter-post-job__section--compact .recruiter-post-job__field {
+  gap: 6px;
+}
+
+.recruiter-post-job__section--compact .recruiter-post-job__field + .recruiter-post-job__field {
+  margin-top: 8px;
+}
+
+.recruiter-post-job__section--compact .recruiter-post-job__field textarea {
+  min-height: 104px;
+}
+
+.recruiter-post-job__field select:invalid {
+  color: var(--muted-foreground);
+}
+
+.recruiter-post-job__field option {
+  color: var(--foreground);
+}
+
+.recruiter-post-job__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.recruiter-post-job__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.recruiter-post-job__field--full {
+  grid-column: 1 / -1;
+}
+
+.recruiter-post-job__field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+}
+
+.recruiter-post-job__field label span {
+  color: oklch(0.75 0.14 45);
+}
+
+.recruiter-post-job__field input,
+.recruiter-post-job__field select,
+.recruiter-post-job__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recruiter-post-job__field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.recruiter-post-job__field select {
+  height: 52px;
+  appearance: none;
+  line-height: 1.2;
+}
+
+.recruiter-post-job__field input:focus,
+.recruiter-post-job__field select:focus,
+.recruiter-post-job__field textarea:focus {
+  border-color: oklch(0.55 0.18 255 / 60%);
+  box-shadow: 0 0 0 3px oklch(0.55 0.18 255 / 16%);
+}
+
+.recruiter-post-job__date-input--empty {
+  color: var(--muted-foreground);
+  opacity: 0.72;
+}
+
+.recruiter-post-job__date-input--filled {
+  color: var(--foreground);
+  opacity: 1;
+}
+
+.recruiter-post-job__date-input--empty::-webkit-datetime-edit,
+.recruiter-post-job__date-input--empty::-webkit-datetime-edit-text,
+.recruiter-post-job__date-input--empty::-webkit-datetime-edit-month-field,
+.recruiter-post-job__date-input--empty::-webkit-datetime-edit-day-field,
+.recruiter-post-job__date-input--empty::-webkit-datetime-edit-year-field {
+  color: var(--muted-foreground);
+}
+
+.recruiter-post-job__date-input--filled::-webkit-datetime-edit,
+.recruiter-post-job__date-input--filled::-webkit-datetime-edit-text,
+.recruiter-post-job__date-input--filled::-webkit-datetime-edit-month-field,
+.recruiter-post-job__date-input--filled::-webkit-datetime-edit-day-field,
+.recruiter-post-job__date-input--filled::-webkit-datetime-edit-year-field {
+  color: var(--foreground);
+}
+
+.recruiter-post-job__combo {
+  position: relative;
+}
+
+.recruiter-post-job__combo input[readonly] {
+  cursor: pointer;
+}
+
+.recruiter-post-job__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px -24px rgba(15, 23, 42, 0.24);
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.recruiter-post-job__dropdown--skills {
+  position: static;
+  margin-top: 8px;
+}
+
+.recruiter-post-job__option {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+  color: var(--foreground);
+  cursor: pointer;
+  font: inherit;
+}
+
+.recruiter-post-job__option:hover {
+  background: oklch(0.55 0.18 255 / 8%);
+}
+
+.recruiter-post-job__skills {
+  min-height: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.recruiter-post-job__skills input {
+  flex: 1;
+  min-width: 180px;
+  border: none;
+  padding: 6px 4px;
+  background: transparent;
+}
+
+.recruiter-post-job__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: oklch(0.55 0.18 255 / 12%);
+  color: var(--primary);
+  border: 1px solid oklch(0.55 0.18 255 / 25%);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.recruiter-post-job__chip button {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.recruiter-post-job__hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+}
+
+.recruiter-post-job__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.recruiter-post-job__toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  font-weight: 600;
+}
+
+.recruiter-post-job__publish-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, oklch(0.65 0.14 45), oklch(0.55 0.16 40));
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px oklch(0.55 0.16 40 / 30%);
+}
+
+@media (max-width: 1200px) {
+  .recruiter-post-job {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .recruiter-post-job__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recruiter-post-job__hero {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .recruiter-post-job__main {
+    padding: 18px 16px 40px;
+  }
+
+  .recruiter-post-job__form {
+    padding: 18px 16px;
+  }
+
+  .recruiter-post-job__actions {
+    justify-content: stretch;
+  }
+
+  .recruiter-post-job__publish-btn {
+    width: 100%;
+  }
+}

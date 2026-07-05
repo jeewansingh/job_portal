@@ -183,7 +183,7 @@ export default function Register() {
       console.log(`  ${key}:`, value);
     }
 
-    register(profileData);
+    register(profileData, "candidate");
     navigate("/dashboard");
   };
 
