@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import SkillCapsules from "../components/SkillCapsules";
-import { useUser } from "../context/UserContext";
-import "../styles/Auth.css";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
+import SkillCapsules from "../../components/SkillCapsules";
+import { useUser } from "../../context/UserContext";
+import "../../styles/Auth.css";
 
 const JOB_TYPES = [
   "Full-time",

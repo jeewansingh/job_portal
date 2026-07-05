@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { useUser } from "../context/UserContext";
-import "../styles/Auth.css";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
+import { useUser } from "../../context/UserContext";
+import "../../styles/Auth.css";
 
 export default function Login() {
   const { login } = useUser();

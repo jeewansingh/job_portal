@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import JobCard from "../components/JobCard";
-import "../styles/RecommendedJobs.css";
+import DashboardLayout from "../../components/DashboardLayout";
+import JobCard from "../../components/JobCard";
+import "../../styles/RecommendedJobs.css";
 
 const PAGE_SIZE = 12;
 
@@ -165,7 +165,7 @@ const industryJobsMap = {
       logoLetter: "A",
       title: "Travel Operations Coordinator",
       location: "Denver, CO",
-      type: "Hybrid",
+      type: "Internship",
       salary: "$65K - $85K",
       salaryDetail: "per year",
       tags: ["Travel", "Customer Support"],

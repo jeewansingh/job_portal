@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
-import DashboardLayout from "../components/DashboardLayout";
-import ProfileCompletionRing from "../components/ProfileCompletionRing";
-import SkillCapsules from "../components/SkillCapsules";
-import { useUser } from "../context/UserContext";
-import { formatDate, getDisplayName } from "../utils/profile";
-import "../styles/Profile.css";
+import DashboardLayout from "../../components/DashboardLayout";
+import ProfileCompletionRing from "../../components/ProfileCompletionRing";
+import SkillCapsules from "../../components/SkillCapsules";
+import { useUser } from "../../context/UserContext";
+import { formatDate, getDisplayName } from "../../utils/profile";
+import "../../styles/Profile.css";
 
 const JOB_TYPES = [
   "Full-time",

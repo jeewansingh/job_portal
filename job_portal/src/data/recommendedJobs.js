@@ -12,6 +12,7 @@ export const recommendedJobs = [
     tags: ["React", "TypeScript", "Remote"],
     posted: "2 days ago",
     featured: true,
+    deadlineDaysLeft: 2,
     matchScore: 96,
     overview: ["Hybrid collaboration", "High-impact web platform", "Remote-friendly team"],
     description:
@@ -33,6 +34,7 @@ export const recommendedJobs = [
     tags: ["Figma", "Design Systems"],
     posted: "3 days ago",
     featured: false,
+    deadlineDaysLeft: 6,
     matchScore: 93,
     overview: ["Design strategy", "Cross-functional product work", "Global user base"],
     description:
@@ -54,6 +56,7 @@ export const recommendedJobs = [
     tags: ["Go", "Kubernetes", "AWS"],
     posted: "1 day ago",
     featured: true,
+    deadlineDaysLeft: 1,
     matchScore: 91,
     overview: ["Cloud infrastructure", "Platform reliability", "Developer productivity"],
     description:
@@ -75,6 +78,7 @@ export const recommendedJobs = [
     tags: ["Leadership", "Scaling"],
     posted: "5 days ago",
     featured: false,
+    deadlineDaysLeft: 9,
     matchScore: 88,
     overview: ["Team leadership", "Platform initiatives", "Operational excellence"],
     description:
@@ -96,6 +100,7 @@ export const recommendedJobs = [
     tags: ["Rust", "TypeScript", "Remote"],
     posted: "12 hours ago",
     featured: true,
+    deadlineDaysLeft: 12,
     matchScore: 95,
     overview: ["Senior technical leadership", "High-scale architecture", "Remote-first culture"],
     description:
@@ -117,13 +122,14 @@ export const recommendedJobs = [
     tags: ["Community", "Content"],
     posted: "4 days ago",
     featured: false,
+    deadlineDaysLeft: 65,
     matchScore: 90,
     overview: ["Developer advocacy", "Community growth", "Technical storytelling"],
     description:
-      "Shape the developer experience narrative and partner with the community to create standout content.",
+      "Shape the developer experience narrative and partner with the community to create standout content. Shape the developer experience narrative and partner with the community to create standout content. Shape the developer experience narrative and partner with the community to create standout content. Shape the developer experience narrative and partner with the community to create standout content. Shape the developer experience narrative and partner with the community to create standout content.",
     specification: "Excellent public speaking, technical writing, and community-building experience.",
     requiredSkills: ["Community", "Content", "Public Speaking", "Developer Advocacy"],
-    companyDescription: "Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.",
+    companyDescription: "Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.Vercel provides the frontend cloud platform for building, previewing, and shipping modern web apps.",
   },
   {
     id: 7,
@@ -138,6 +144,7 @@ export const recommendedJobs = [
     tags: ["React", "JavaScript"],
     posted: "1 week ago",
     featured: false,
+    deadlineDaysLeft: 34,
     matchScore: 92,
     overview: ["Web application delivery", "Cross-team collaboration", "Product iteration"],
     description:
@@ -159,6 +166,7 @@ export const recommendedJobs = [
     tags: ["Node.js", "Azure", "Remote"],
     posted: "6 days ago",
     featured: true,
+    deadlineDaysLeft: 2,
     matchScore: 94,
     overview: ["API development", "Cloud services", "Scalable systems"],
     description:
@@ -180,6 +188,7 @@ export const recommendedJobs = [
     tags: ["Figma", "UI Design"],
     posted: "3 days ago",
     featured: false,
+    deadlineDaysLeft: 12,
     matchScore: 89,
     overview: ["Design systems", "User-centered design", "Product collaboration"],
     description:
@@ -201,6 +210,7 @@ export const recommendedJobs = [
     tags: ["Ruby", "React", "GraphQL"],
     posted: "2 days ago",
     featured: false,
+    deadlineDaysLeft: 12,
     matchScore: 87,
     overview: ["Product engineering", "Full-stack ownership", "Remote-first collaboration"],
     description:
@@ -222,6 +232,7 @@ export const recommendedJobs = [
     tags: ["Python", "Spark", "SQL"],
     posted: "4 days ago",
     featured: false,
+    deadlineDaysLeft: 12,
     matchScore: 86,
     overview: ["Data pipelines", "Analytics infrastructure", "Cross-functional impact"],
     description:
@@ -243,6 +254,7 @@ export const recommendedJobs = [
     tags: ["Swift", "iOS", "Mobile"],
     posted: "1 day ago",
     featured: true,
+    deadlineDaysLeft: 12,
     matchScore: 97,
     overview: ["Mobile engineering", "High-quality consumer apps", "Shared design language"],
     description:
@@ -264,6 +276,7 @@ export const recommendedJobs = [
     tags: ["Product", "Strategy"],
     posted: "2 days ago",
     featured: false,
+    deadlineDaysLeft: 12,
     matchScore: 91,
     overview: ["Product strategy", "Customer insight", "Cross-functional leadership"],
     description: "Drive product planning and execution for a collaborative workspace platform used by teams worldwide.",
@@ -284,6 +297,7 @@ export const recommendedJobs = [
     tags: ["SRE", "Cloud", "Observability"],
     posted: "3 days ago",
     featured: false,
+    deadlineDaysLeft: 12,
     matchScore: 89,
     overview: ["Reliability engineering", "Incident response", "Cloud operations"],
     description: "Help keep a mission-critical observability platform dependable and fast for global customers.",
@@ -304,6 +318,7 @@ export const recommendedJobs = [
     tags: ["Customer Success", "Communication"],
     posted: "5 days ago",
     featured: false,
+    deadlineDaysLeft: 12,
     matchScore: 88,
     overview: ["Client partnerships", "Growth enablement", "Retention strategy"],
     description: "Work closely with customers to ensure they realize value from the platform and expand their usage.",

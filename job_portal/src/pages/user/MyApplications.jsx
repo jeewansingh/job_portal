@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import { recentApplications } from "../data/applications";
-import { formatDate } from "../utils/profile";
-import "../styles/MyApplications.css";
+import DashboardLayout from "../../components/DashboardLayout";
+import { recentApplications } from "../../data/applications";
+import { formatDate } from "../../utils/profile";
+import "../../styles/MyApplications.css";
 
 const statusClassMap = {
   Applied: "application-card__status--applied",

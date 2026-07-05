@@ -1,16 +1,16 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
-import RecommendedJobs from "./pages/RecommendedJobs";
-import BrowseJobs from "./pages/BrowseJobs";
-import MyApplications from "./pages/MyApplications";
-import Industries from "./pages/Industries";
-import IndustryJobs from "./pages/IndustryJobs";
-import JobDetails from "./pages/JobDetails";
+import Home from "./pages/public/Home";
+import Login from "./pages/public/Login";
+import Register from "./pages/public/Register";
+import Dashboard from "./pages/user/Dashboard";
+import Profile from "./pages/user/Profile";
+import RecommendedJobs from "./pages/user/RecommendedJobs";
+import BrowseJobs from "./pages/public/BrowseJobs";
+import MyApplications from "./pages/user/MyApplications";
+import Industries from "./pages/public/Industries";
+import IndustryJobs from "./pages/public/IndustryJobs";
+import JobDetails from "./pages/public/JobDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import "./App.css";
@@ -53,9 +53,9 @@ function App() {
         <Route
           path="/browse-jobs"
           element={
-            <ProtectedRoute>
+            
               <BrowseJobs />
-            </ProtectedRoute>
+           
           }
         />
 
@@ -68,21 +68,38 @@ function App() {
           }
         />
 
-        <Route
+        {/* <Route
           path="/industries"
           element={
             <ProtectedRoute>
               <Industries />
             </ProtectedRoute>
           }
-        />
+        /> */}
 
         <Route
+          path="/industries"
+          element={
+              <Industries />
+            
+          }
+        />
+
+        {/* <Route
           path="/industries/:industrySlug"
           element={
             <ProtectedRoute>
               <IndustryJobs />
             </ProtectedRoute>
+          }
+        /> */}
+
+           <Route
+          path="/industries/:industrySlug"
+          element={
+           
+              <IndustryJobs />
+           
           }
         />
 

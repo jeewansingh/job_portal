@@ -56,76 +56,61 @@
 .industry-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px 24px;
-  text-align: center;
-  transition: all 0.35s ease;
-  cursor: pointer;
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.industry-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.12);
-  border-color: oklch(0.55 0.18 255 / 20%);
+.industry-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.industry-card-link:hover .industry-card {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.12);
+  border-color: oklch(0.55 0.18 255 / 25%);
 }
 
 .industry-card__icon-wrap {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
-  transition: transform 0.35s ease;
+  margin-bottom: 16px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
 }
 
-.industry-card:hover .industry-card__icon-wrap {
-  transform: scale(1.08) rotate(-3deg);
-}
-
-.industry-card__icon {
-  width: 28px;
-  height: 28px;
+.industry-card__letter {
   color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
 }
 
 .industry-card__name {
+  margin: 0 0 8px;
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--foreground);
-  margin: 0 0 8px;
-  letter-spacing: -0.01em;
+}
+
+.industry-card__description {
+  margin: 0 0 12px;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  font-size: 0.9rem;
 }
 
 .industry-card__count {
+  margin: 0;
   font-size: 0.875rem;
-  color: var(--muted-foreground);
-  font-family: var(--font-body);
-  margin: 0 0 16px;
-}
-
-.industry-card__growth {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
-  border-radius: 100px;
-  font-size: 0.75rem;
+  color: var(--primary);
   font-weight: 600;
-  font-family: var(--font-body);
-}
-
-.industry-card__growth--up {
-  background: oklch(0.65 0.12 145 / 12%);
-  color: oklch(0.45 0.12 145);
-}
-
-.industry-card__growth--hot {
-  background: oklch(0.65 0.14 45 / 12%);
-  color: oklch(0.5 0.14 45);
 }
 
 @media (max-width: 1024px) {

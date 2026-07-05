@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useUser } from "../context/UserContext";
-import { recentApplications, applicationStatusLabels } from "../data/applications";
-import { recommendedJobs } from "../data/recommendedJobs";
-import DashboardLayout from "../components/DashboardLayout";
-import JobCard from "../components/JobCard";
-import "../styles/Dashboard.css";
-import "../styles/JobDetails.css";
+import { useUser } from "../../context/UserContext";
+import { recentApplications, applicationStatusLabels } from "../../data/applications";
+import { recommendedJobs } from "../../data/recommendedJobs";
+import DashboardLayout from "../../components/DashboardLayout";
+import JobCard from "../../components/JobCard";
+import "../../styles/Dashboard.css";
+import "../../styles/JobDetails.css";
 
 const APPLICATION_STORAGE_KEY = "job-portal-application-status";
 
@@ -91,13 +91,13 @@ export default function JobDetails() {
       return;
     }
 
-    const nextStatus = "Applied";
+    const nextStatus = "Under Review";
     setApplicationStatus(nextStatus);
     setStoredApplicationStatus(job.id, nextStatus);
     setShowToast(true);
   };
 
-  const deadlineDaysLeft = 12;
+
 
   const overviewSummary = [
     { icon: "👥", label: "Openings", value: "3 openings" },
@@ -105,18 +105,25 @@ export default function JobDetails() {
     { icon: "🗂️", label: "Category", value: job.tags[0] || "Engineering" },
     { icon: "🔄", label: "Job Shift", value: job.type },
     { icon: "🏢", label: "Company", value: job.company },
-    { icon: "⏰", label: "Deadline", value: `${deadlineDaysLeft} days left` },
+    { icon: "⏰", label: "Deadline", value: job.deadlineDaysLeft ? `${job.deadlineDaysLeft} days left` : "No deadline" },
   ];
 
   const relatedJobs = recommendedJobs.filter((item) => item.id !== job.id).slice(0, 3);
+ 
 
   return (
     <DashboardLayout>
       <div className="dashboard">
         <div className="dashboard__container">
           <section className="dashboard__page-header">
-            <Link to="/recommended-jobs" className="dashboard__back-link">
+            {/* <Link to="/recommended-jobs" className="dashboard__back-link">
               ← Back to recommended jobs
+            </Link> */}
+            <Link
+                className="dashboard__back-link"
+                onClick={() => navigate(-1)}
+            >
+            ← Go Back 
             </Link>
             <div className="dashboard__detail-hero">
               <div className="dashboard__detail-summary">
@@ -130,19 +137,34 @@ export default function JobDetails() {
                 </div>
               </div>
               <div className="dashboard__detail-actions">
-                <div className="dashboard__match-score">
-                  <div className="dashboard__match-score-ring" style={{ "--score-percent": `${job.matchScore}%` }}>
-                    <span>{job.matchScore}%</span>
+                {isLoggedIn && (
+                  <div className="dashboard__match-score">
+                    <div className="dashboard__match-score-ring" style={{ "--score-percent": `${job.matchScore}%` }}>
+                      <span>{job.matchScore}%</span>
+                    </div>
+                    <span className="dashboard__match-score-label">Match Score</span>
                   </div>
-                  <span className="dashboard__match-score-label">Match Score</span>
-                </div>
-                <button
-                  className={`dashboard__detail-btn${applicationStatus ? ` ${statusClassMap[applicationStatus] || "dashboard__detail-btn--applied"}` : ""}`}
+                )}
+                {/* <button
+                  className={`dashboard__detail-btn${isLoggedIn && applicationStatus ? ` ${statusClassMap[applicationStatus] || "dashboard__detail-btn--applied"}` : ""}`}
                   onClick={handleApply}
                   disabled={Boolean(applicationStatus)}
                 >
                   {applicationStatus ? applicationStatusLabels[applicationStatus] || applicationStatus : "Apply Now"}
-                </button>
+                </button> */}
+                <button
+  className={`dashboard__detail-btn ${
+    isLoggedIn && applicationStatus
+      ? statusClassMap[applicationStatus] || "dashboard__detail-btn--applied"
+      : ""
+  }`}
+  onClick={handleApply}
+  disabled={isLoggedIn && Boolean(applicationStatus)}
+>
+  {!isLoggedIn
+    ? "Apply Now"
+    : applicationStatus || "Apply Now"}
+</button>
               </div>
             </div>
           </section>

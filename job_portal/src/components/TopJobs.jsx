@@ -1,5 +1,6 @@
 // import { MapPin, Clock, ArrowRight } from "lucide-react";
 import JobCard from "./JobCard";
+import { Link } from "react-router-dom";
 import { recommendedJobs } from "../data/recommendedJobs";
 import "../styles/TopJobs.css";
 
@@ -24,9 +25,10 @@ export default function TopJobs() {
         </div>
 
         <div className="top-jobs__cta">
-          <a href="#" className="top-jobs__btn">
+          <Link to="/browse-jobs" className="top-jobs__btn">View Al Jobs</Link>
+          {/* <a href="" className="top-jobs__btn">
             View All Jobs
-          </a>
+          </a> */}
         </div>
       </div>
     </section>

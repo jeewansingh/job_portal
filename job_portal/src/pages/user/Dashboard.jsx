@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import JobCard from "../components/JobCard";
-import ProfileCompletionRing from "../components/ProfileCompletionRing";
-import { recentApplications } from "../data/applications";
-import { recommendedJobs } from "../data/recommendedJobs";
-import { useUser } from "../context/UserContext";
-import { formatDate, getDisplayName } from "../utils/profile";
-import "../styles/Dashboard.css";
+import DashboardLayout from "../../components/DashboardLayout";
+import JobCard from "../../components/JobCard";
+import ProfileCompletionRing from "../../components/ProfileCompletionRing";
+import { recentApplications } from "../../data/applications";
+import { recommendedJobs } from "../../data/recommendedJobs";
+import { useUser } from "../../context/UserContext";
+import { formatDate, getDisplayName } from "../../utils/profile";
+import "../../styles/Dashboard.css";
 
 const statusClassMap = {
   Applied: "application-card__status--applied",

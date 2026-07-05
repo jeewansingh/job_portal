@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import DashboardLayout from "../components/DashboardLayout";
-import JobCard from "../components/JobCard";
-import { recommendedJobs } from "../data/recommendedJobs";
-import "../styles/BrowseJobs.css";
+import DashboardLayout from "../../components/DashboardLayout";
+import JobCard from "../../components/JobCard";
+import { recommendedJobs } from "../../data/recommendedJobs";
+import "../../styles/BrowseJobs.css";
 
 const PAGE_SIZE = 12;
 
