@@ -5,12 +5,9 @@ import "../../styles/RecruiterSidebar.css";
 const navItems = [
   { label: "Dashboard", to: "/recruiter/dashboard" },
   { label: "Post Job", to: "/recruiter/post-job" },
-  { label: "Manage Jobs", to: "#" , future: true },
-  { label: "Applications", to: "#" , future: true },
-  { label: "Interviews", to: "#" , future: true },
-  { label: "Company Profile", to: "#" , future: true },
-  { label: "Notifications", to: "#" , future: true },
-  { label: "Settings", to: "#" , future: true },
+  { label: "Manage Jobs", to: "/recruiter/manage-jobs" },
+  { label: "Applications", to: "/recruiter/applications" },
+  { label: "Profile", to: "/recruiter/profile" },
 ];
 
 export default function RecruiterSidebar({ activeItem, label = "Recruiter Console" }) {

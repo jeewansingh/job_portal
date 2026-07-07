@@ -6,6 +6,11 @@ import Register from "./pages/public/Register";
 import RecruiterLogin from "./pages/recruiter/Login";
 import RecruiterRegister from "./pages/recruiter/Register";
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
+import ManageJobs from "./pages/recruiter/ManageJobs";
+import RecruiterApplications from "./pages/recruiter/RecruiterApplications";
+import RecruiterJobDetail from "./pages/recruiter/RecruiterJobDetail";
+import RecruiterApplicantProfile from "./pages/recruiter/RecruiterApplicantProfile";
+import RecruiterProfile from "./pages/recruiter/RecruiterProfile";
 import PostJob from "./pages/recruiter/PostJob";
 import Dashboard from "./pages/user/Dashboard";
 import Profile from "./pages/user/Profile";
@@ -124,6 +129,51 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["recruiter"]}>
               <PostJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/manage-jobs"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <ManageJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/applications"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <RecruiterApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/profile"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <RecruiterProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/jobs/:jobId"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <RecruiterJobDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recruiter/applicants/:applicantId"
+          element={
+            <ProtectedRoute allowedRoles={["recruiter"]}>
+              <RecruiterApplicantProfile />
             </ProtectedRoute>
           }
         />

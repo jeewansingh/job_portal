@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import "../../styles/RecruiterDashboard.css";
@@ -86,9 +87,9 @@ export default function RecruiterDashboard() {
               <a href="#posted-jobs" className="recruiter-dashboard__primary-action">
                 Post Job
               </a>
-              <a href="#applications" className="recruiter-dashboard__secondary-action">
+              <Link to="/recruiter/applications" className="recruiter-dashboard__secondary-action">
                 View Applicants
-              </a>
+              </Link>
             </div>
           </div>
         </section>

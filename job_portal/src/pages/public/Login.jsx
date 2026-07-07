@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
@@ -6,13 +6,19 @@ import { useUser } from "../../context/UserContext";
 import "../../styles/Auth.css";
 
 export default function Login() {
-  const { login } = useUser();
+  const { login, isLoggedIn, user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const fallback = user?.role === "recruiter" ? "/recruiter/dashboard" : "/dashboard";
+    navigate(fallback, { replace: true });
+  }, [isLoggedIn, navigate, user?.role]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,7 +40,10 @@ export default function Login() {
 
     const params = new URLSearchParams(location.search);
     const redirectTo = params.get("redirect");
-    const safeRedirect = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+    const safeRedirect =
+      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("/recruiter/")
+        ? redirectTo
+        : "/dashboard";
 
     navigate(safeRedirect);
   };

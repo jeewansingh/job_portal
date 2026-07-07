@@ -5,7 +5,8 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   const { isLoggedIn, user } = useUser();
 
   if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
+    const recruiterOnly = allowedRoles?.length === 1 && allowedRoles.includes("recruiter");
+    return <Navigate to={recruiterOnly ? "/recruiter/login" : "/login"} replace />;
   }
 
   if (allowedRoles?.length && !allowedRoles.includes(user?.role || "candidate")) {

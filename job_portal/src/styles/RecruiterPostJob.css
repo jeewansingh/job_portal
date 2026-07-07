@@ -326,6 +326,66 @@
   box-shadow: 0 10px 28px oklch(0.55 0.16 40 / 30%);
 }
 
+.recruiter-post-job__modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.recruiter-post-job__modal {
+  width: min(1120px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+  padding: 24px;
+}
+
+.recruiter-post-job__modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.recruiter-post-job__modal-close {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.recruiter-post-job__form--modal {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.recruiter-post-job__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 18px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
 @media (max-width: 1200px) {
   .recruiter-post-job {
     grid-template-columns: 1fr;
@@ -357,5 +417,28 @@
 
   .recruiter-post-job__publish-btn {
     width: 100%;
+  }
+
+  .recruiter-post-job__modal-overlay {
+    padding: 12px;
+  }
+
+  .recruiter-post-job__modal {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+
+  .recruiter-post-job__modal-header {
+    flex-direction: column;
+  }
+
+  .recruiter-post-job__modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .recruiter-post-job__modal-actions .recruiter-dashboard__primary-action,
+  .recruiter-post-job__modal-actions .recruiter-dashboard__secondary-action {
+    width: 100%;
+    justify-content: center;
   }
 }
