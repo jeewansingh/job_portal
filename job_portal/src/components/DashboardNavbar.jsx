@@ -43,10 +43,12 @@ const DEFAULT_NOTIFICATIONS = [
 ];
 
 export default function DashboardNavbar() {
-  const { user, logout } = useUser();
+  const { user, logout, updateProfile } = useUser();
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsData, setNotificationsData] = useState(DEFAULT_NOTIFICATIONS);
+  const [unreadCount, setUnreadCount] = useState(0);
   const notificationsRef = useRef(null);
 
   useEffect(() => {
@@ -66,25 +68,41 @@ export default function DashboardNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const nextNotifications = Array.isArray(user?.notifications) && user.notifications.length
+      ? user.notifications
+      : DEFAULT_NOTIFICATIONS;
+
+    setNotificationsData(nextNotifications);
+
+    if (typeof user?.notificationCount === "number") {
+      setUnreadCount(user.notificationCount);
+    } else {
+      setUnreadCount(nextNotifications.reduce((count, item) => count + (item.unread ? 1 : 0), 0));
+    }
+  }, [user?.notificationCount, user?.notifications]);
+
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const notifications = useMemo(() => {
-    if (Array.isArray(user?.notifications) && user.notifications.length) {
-      return user.notifications;
-    }
-    return DEFAULT_NOTIFICATIONS;
-  }, [user?.notifications]);
+  const notifications = useMemo(() => notificationsData, [notificationsData]);
 
-  const unreadCount = useMemo(() => {
-    if (typeof user?.notificationCount === "number") {
-      return user.notificationCount;
-    }
+  const markAllAsRead = () => {
+    const nextNotifications = notifications.map((notification) => ({
+      ...notification,
+      unread: false,
+    }));
 
-    return notifications.reduce((count, item) => count + (item.unread ? 1 : 0), 0);
-  }, [notifications, user?.notificationCount]);
+    setNotificationsData(nextNotifications);
+    setUnreadCount(0);
+
+    updateProfile({
+      notificationCount: 0,
+      notifications: nextNotifications,
+    });
+  };
 
   const displayName = getDisplayName(user);
   const initial = displayName.charAt(0).toUpperCase();
@@ -175,6 +193,14 @@ export default function DashboardNavbar() {
                     <strong>Notifications</strong>
                     <span>{unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}</span>
                   </div>
+                  <button
+                    type="button"
+                    className="dashboard-navbar__notification-mark-read"
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                  >
+                    Mark all as read
+                  </button>
                 </div>
                 <div className="dashboard-navbar__notification-list">
                   {notifications.slice(0, 5).map((notification) => (

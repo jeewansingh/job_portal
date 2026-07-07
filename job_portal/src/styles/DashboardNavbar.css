@@ -150,6 +150,10 @@
 }
 
 .dashboard-navbar__notification-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 18px 14px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
@@ -167,6 +171,29 @@
   color: var(--muted-foreground);
   font-size: 0.84rem;
   font-family: var(--font-body);
+}
+
+.dashboard-navbar__notification-mark-read {
+  flex-shrink: 0;
+  border: 1px solid rgba(95, 116, 255, 0.16);
+  background: rgba(95, 116, 255, 0.08);
+  color: var(--primary);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.dashboard-navbar__notification-mark-read:hover:not(:disabled) {
+  background: rgba(95, 116, 255, 0.14);
+}
+
+.dashboard-navbar__notification-mark-read:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .dashboard-navbar__notification-list {
