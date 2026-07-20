@@ -38,6 +38,8 @@ class User(Base):
 
     desired_position = Column(String(100))
 
+    preferred_job_type = Column(String(30))
+
     portfolio_link = Column(Text)
 
     resume_url = Column(Text)

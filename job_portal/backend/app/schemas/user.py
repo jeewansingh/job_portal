@@ -1,9 +1,11 @@
 from pydantic import BaseModel
-from datetime import date
-from typing import List
+from datetime import date, datetime
+from typing import Optional
 
 
-class UserCreate(BaseModel):
+class UserResponse(BaseModel):
+
+    id: int
 
     full_name: str
 
@@ -15,16 +17,27 @@ class UserCreate(BaseModel):
 
     email: str
 
-    password: str
-
     address: str
 
-    education: str | None = None
+    education: Optional[str] = None
 
-    experience_years: float = 0
+    experience_years: float
 
-    desired_position: str | None = None
+    desired_position: Optional[str] = None
 
-    portfolio_link: str | None = None
+    preferred_job_type: Optional[str] = None
 
-    skills: List[str] = []
+    portfolio_link: Optional[str] = None
+
+    resume_url: Optional[str] = None
+
+    profile_picture_url: Optional[str] = None
+
+    created_at: datetime
+
+    updated_at: datetime
+
+    is_active: bool
+
+    class Config:
+        from_attributes = True

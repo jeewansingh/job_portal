@@ -14,3 +14,14 @@ class UserSkillRepository:
         )
 
         db.add(user_skill)
+        db.flush()  # Ensure the record is prepared for commit
+
+        return user_skill
+    
+    @staticmethod
+    def get_by_id(db: Session, skill_id: int):
+        return (
+            db.query(Skill)
+            .filter(Skill.id == skill_id)
+            .first()
+        )
