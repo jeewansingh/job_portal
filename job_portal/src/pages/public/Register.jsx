@@ -299,7 +299,7 @@ export default function Register() {
                   name="phoneNumber"
                   value={form.phoneNumber}
                   onChange={handleChange}
-                  placeholder="+1 234 567 8900"
+                  placeholder="+977 9800000000"
                   required
                 />
               </div>

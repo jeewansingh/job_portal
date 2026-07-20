@@ -1,11 +1,17 @@
 // import { MapPin, Clock, ArrowRight } from "lucide-react";
 import JobCard from "./JobCard";
+import { useEffect, useState } from "react";
+import { getRecommendedJobs, getTopJobs } from "../services/jobs";
 import { Link } from "react-router-dom";
-import { recommendedJobs } from "../data/recommendedJobs";
+// import { recommendedJobs } from "../data/recommendedJobs";
 import "../styles/TopJobs.css";
 
 export default function TopJobs() {
-  const jobs = recommendedJobs.slice(0, 6);
+  const [jobs, setJobs] = useState([]);
+
+useEffect(() => {
+    getTopJobs().then(setJobs);
+}, []);
 
   return (
     <section id="jobs" className="top-jobs">

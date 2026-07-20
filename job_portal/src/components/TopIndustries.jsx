@@ -1,51 +1,26 @@
 // import { Code, Stethoscope, Landmark, ShoppingCart, Cpu, Film, Truck, BarChart3, TrendingUp, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../styles/TopIndustries.css";
+import { useEffect, useState } from "react";
+import {  getTopIndustries } from "../services/categories";
 
-const industries = [
-  {
-    name: "Technology",
-    slug: "technology",
-    logoLetter: "T",
-    jobs: "4,200+",
-    growth: "+18%",
-    growthType: "up",
-    description: "Software, AI, cloud engineering, and product roles.",
-    color: "linear-gradient(135deg, oklch(0.5 0.12 255), oklch(0.55 0.14 270))",
-  },
-  {
-    name: "Healthcare",
-    slug: "healthcare",
-    logoLetter: "H",
-    jobs: "2,800+",
-    growth: "+24%",
-    growthType: "up",
-    description: "Clinical operations, biopharma, and health-tech opportunities.",
-    color: "linear-gradient(135deg, oklch(0.55 0.14 25), oklch(0.6 0.12 30))",
-  },
-  {
-    name: "Finance",
-    slug: "finance",
-    logoLetter: "F",
-    jobs: "1,900+",
-    growth: "+12%",
-    growthType: "up",
-    description: "Banking, fintech, analytics, and investment roles.",
-    color: "linear-gradient(135deg, oklch(0.5 0.1 145), oklch(0.55 0.12 150))",
-  },
-  {
-    name: "Travel & Hospitality",
-    slug: "travel-hospitality",
-    logoLetter: "TH",
-    jobs: "1,900+",
-    growth: "+12%",
-    growthType: "up",
-    description: "Hospitality, customer experience, and travel operations roles.",
-    color: "linear-gradient(135deg, oklch(0.45 0.12 300), oklch(0.5 0.14 310))",
-  },
-];
 
 export default function TopIndustries() {
+  const [industries, setIndustries] = useState([]);
+
+  useEffect(() => {
+    const fetchTopIndustries = async () => {
+      try {
+        const data = await getTopIndustries();
+        setIndustries(data);
+      } catch (error) {
+        console.error("Error fetching top industries:", error);
+      }
+    };
+
+    fetchTopIndustries();
+  }, []);
+
   return (
     <section id="industries" className="top-industries">
       <div className="top-industries__container">

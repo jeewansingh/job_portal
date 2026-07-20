@@ -1,0 +1,37 @@
+export const industries = [
+  {
+    name: "Technology",
+    slug: "technology",
+    logoLetter: "T",
+    jobs: "4,200+",
+    description: "Software, AI, cloud engineering, and product roles.",
+    color: "linear-gradient(135deg, oklch(0.5 0.12 255), oklch(0.55 0.14 270))",
+  },
+  {
+    name: "Healthcare",
+    slug: "healthcare",
+    logoLetter: "H",
+    jobs: "2,800+",
+    growth: "+24%",
+    description: "Clinical operations, biopharma, and health-tech opportunities.",
+    color: "linear-gradient(135deg, oklch(0.55 0.14 25), oklch(0.6 0.12 30))",
+  },
+  {
+    name: "Finance",
+    slug: "finance",
+    logoLetter: "F",
+    jobs: "1,900+",
+    growth: "+12%",
+    description: "Banking, fintech, analytics, and investment roles.",
+    color: "linear-gradient(135deg, oklch(0.5 0.1 145), oklch(0.55 0.12 150))",
+  },
+  {
+    name: "Travel & Hospitality",
+    slug: "travel-hospitality",
+    logoLetter: "TH",
+    jobs: "1,900+",
+    growth: "+12%",
+    description: "Hospitality, customer experience, and travel operations roles.",
+    color: "linear-gradient(135deg, oklch(0.45 0.12 300), oklch(0.5 0.14 310))",
+  },
+];

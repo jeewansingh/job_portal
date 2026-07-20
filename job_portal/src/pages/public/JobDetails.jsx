@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { recentApplications, applicationStatusLabels } from "../../data/applications";
-import { recommendedJobs } from "../../data/recommendedJobs";
+import { recommendedJobs } from "../../data/jobs";
 import DashboardLayout from "../../components/DashboardLayout";
 import JobCard from "../../components/JobCard";
 import "../../styles/Dashboard.css";
