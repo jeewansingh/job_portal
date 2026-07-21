@@ -7,9 +7,10 @@ import ProfileCompletionRing from "../../components/ProfileCompletionRing";
 
 import { getRecommendedJobs } from "../../services/jobs";
 import { getRecentApplications } from "../../services/applications";
+import { getUserProfile } from "../../services/profile";
 
 import { useUser } from "../../context/UserContext";
-import { formatDate, getDisplayName } from "../../utils/profile";
+import { formatDate, getDisplayName, calculateProfileCompletionFromBackend } from "../../utils/profile";
 
 import "../../styles/Dashboard.css";
 
@@ -28,6 +29,7 @@ export default function Dashboard() {
 
   const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [recentApplications, setRecentApplications] = useState([]);
+  const [realProfileCompletion, setRealProfileCompletion] = useState(profileCompletion);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -37,13 +39,24 @@ export default function Dashboard() {
 
         setRecommendedJobs(jobs);
         setRecentApplications(applications);
+
+        // Load profile completion from backend (no user ID needed)
+        try {
+          const profile = await getUserProfile();
+          const completion = calculateProfileCompletionFromBackend(profile);
+          setRealProfileCompletion(completion);
+        } catch (err) {
+          console.error("Failed to load profile completion:", err);
+          // Fallback to context value
+          setRealProfileCompletion(profileCompletion);
+        }
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
       }
     }
 
     loadDashboard();
-  }, []);
+  }, [profileCompletion]);
 
   const topJobs = recommendedJobs.slice(0, 6);
 
@@ -66,18 +79,18 @@ export default function Dashboard() {
             </div>
 
             <div className="dashboard__profile-card">
-              <ProfileCompletionRing percentage={profileCompletion} />
+              <ProfileCompletionRing percentage={realProfileCompletion} />
 
               <div className="dashboard__profile-info">
                 <h2>Profile Completion</h2>
 
                 <p>
-                  {profileCompletion === 100
+                  {realProfileCompletion === 100
                     ? "Your profile is fully complete. Great job!"
                     : "Complete your profile to get better job matches."}
                 </p>
 
-                {profileCompletion < 100 && (
+                {realProfileCompletion < 100 && (
                   <Link
                     to="/profile"
                     className="dashboard__profile-btn"

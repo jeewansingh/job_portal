@@ -40,3 +40,12 @@ class UserRepository:
         db.refresh(user)
 
         return user
+
+    @staticmethod
+    def update(
+        db: Session,
+        user: User
+    ):
+        db.flush()
+        db.refresh(user)
+        return user

@@ -3,6 +3,9 @@ from app.models.skill import Skill
 from app.models.user_skill import UserSkill
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from app.routers.users import router as user_router
 from app.routers.jobs import router as job_router
@@ -15,6 +18,29 @@ from app.models import skill
 from app.models import user_skill
 
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite default port
+        "http://localhost:3000",  # Alternative React port
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Create uploads directory if it doesn't exist
+uploads_dir = Path("uploads")
+uploads_dir.mkdir(exist_ok=True)
+(uploads_dir / "resumes").mkdir(exist_ok=True)
+(uploads_dir / "profile_pictures").mkdir(exist_ok=True)
+
+# Mount static files for uploaded content
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth_router)
 app.include_router(user_router)

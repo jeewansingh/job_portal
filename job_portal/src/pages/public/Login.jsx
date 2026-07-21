@@ -3,16 +3,20 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useUser } from "../../context/UserContext";
+import { loginUser } from "../../services/auth";
+import { getFileUrl } from "../../services/api";
 import "../../styles/Auth.css";
 
 export default function Login() {
-  const { login, isLoggedIn, user } = useUser();
+  const { isLoggedIn, user, refreshUser } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -23,29 +27,37 @@ export default function Login() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user types
+    if (error) setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const payload = {
-      email: form.email.trim(),
-      password: form.password,
-    };
+    try {
+      const payload = {
+        email: form.email.trim(),
+        password: form.password,
+      };
 
-    console.log("Login payload (ready to send):", payload);
-    console.log("Login JSON:", JSON.stringify(payload));
+      // Call backend login API
+      await loginUser(payload.email, payload.password);
 
-    login(payload.email, "candidate");
-
-    const params = new URLSearchParams(location.search);
-    const redirectTo = params.get("redirect");
-    const safeRedirect =
-      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("/recruiter/")
-        ? redirectTo
-        : "/dashboard";
-
-    navigate(safeRedirect);
+      // Refresh UserContext to load user from localStorage
+      refreshUser();
+      
+      // Small delay to ensure UserContext is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate to dashboard (always go to dashboard after login)
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,6 +78,12 @@ export default function Login() {
               Sign in to continue your job search
             </p>
 
+            {error && (
+              <div className="auth-card__error">
+                {error}
+              </div>
+            )}
+
             <div className="auth-field">
               <label htmlFor="email">
                 Email <span className="auth-required">*</span>
@@ -79,6 +97,7 @@ export default function Login() {
                 placeholder="Enter your email"
                 autoComplete="email"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -95,11 +114,12 @@ export default function Login() {
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 required
+                disabled={loading}
               />
             </div>
 
-            <button type="submit" className="auth-card__btn">
-              Sign In
+            <button type="submit" className="auth-card__btn" disabled={loading}>
+              {loading ? "Signing In..." : "Sign In"}
             </button>
 
             <p className="auth-card__footer">

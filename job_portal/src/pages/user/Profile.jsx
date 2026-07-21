@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
 import ProfileCompletionRing from "../../components/ProfileCompletionRing";
-import SkillCapsules from "../../components/SkillCapsules";
+import SkillSelector from "../../components/SkillSelector";
 import { useUser } from "../../context/UserContext";
-import { formatDate, getDisplayName } from "../../utils/profile";
+import { formatDate, getDisplayName, calculateProfileCompletionFromBackend } from "../../utils/profile";
+import { getUserProfile, updateUserProfile } from "../../services/profile";
+import { getFileUrl } from "../../services/api";
 import "../../styles/Profile.css";
 
 const JOB_TYPES = [
@@ -16,11 +18,6 @@ const JOB_TYPES = [
 ];
 
 const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
-
-function fileMeta(file) {
-  if (!file) return null;
-  return { name: file.name, size: file.size, type: file.type };
-}
 
 function ProfileField({ label, value, children }) {
   return (
@@ -36,45 +33,85 @@ function ProfileField({ label, value, children }) {
 export default function Profile() {
   const { user, updateProfile, profileCompletion } = useUser();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [profileData, setProfileData] = useState(null);
+  const [localProfileCompletion, setLocalProfileCompletion] = useState(0);
   const [form, setForm] = useState({
-    fullName: user?.fullName || "",
-    gender: user?.gender || "",
-    address: user?.address || "",
-    dateOfBirth: user?.dateOfBirth || "",
-    education: user?.education || "",
-    experienceYears: user?.experienceYears ?? "",
-    email: user?.email || "",
-    phoneNumber: user?.phoneNumber || "",
-    desiredPosition: user?.desiredPosition || "",
-    preferredJobTypes: user?.preferredJobTypes || [],
-    portfolioLink: user?.portfolioLink || "",
+    fullName: "",
+    gender: "",
+    address: "",
+    dateOfBirth: "",
+    education: "",
+    experienceYears: "",
+    email: "",
+    phoneNumber: "",
+    desiredPosition: "",
+    preferredJobTypes: [],
+    portfolioLink: "",
   });
-  const [skills, setSkills] = useState(user?.skills || []);
-  const [resumePdf, setResumePdf] = useState(user?.resumePdf || null);
-  const [profilePicture, setProfilePicture] = useState(
-    user?.profilePicture || null
-  );
-  const [profilePictureUrl, setProfilePictureUrl] = useState(
-    user?.profilePictureUrl || ""
-  );
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState("");
   const resumeInputRef = useRef(null);
   const profileInputRef = useRef(null);
 
   const displayName = getDisplayName(user);
   const initial = displayName.charAt(0).toUpperCase();
 
+  // Fetch profile data on mount
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        setLoading(true);
+
+        const profile = await getUserProfile(); // No user ID needed - uses token
+        setProfileData(profile);
+
+        // Calculate profile completion from backend data
+        const completion = calculateProfileCompletionFromBackend(profile);
+        setLocalProfileCompletion(completion);
+
+        // Convert backend data to frontend format
+        setForm({
+          fullName: profile.full_name || "",
+          gender: profile.gender || "",
+          address: profile.address || "",
+          dateOfBirth: profile.date_of_birth || "",
+          education: profile.education || "",
+          experienceYears: profile.experience_years ?? "",
+          email: profile.email || "",
+          phoneNumber: profile.phone || "",
+          desiredPosition: profile.desired_position || "",
+          preferredJobTypes: profile.preferred_job_type ? [profile.preferred_job_type] : [],
+          portfolioLink: profile.portfolio_link || "",
+        });
+
+        // Set skills from backend
+        if (profile.skills && profile.skills.length > 0) {
+          setSelectedSkills(profile.skills.map(s => ({ id: s.id, name: s.name })));
+        }
+
+        // Don't set profilePictureUrl here - we'll use getFileUrl() in render
+
+        // Don't update context here - Profile page will load full data when visited
+
+      } catch (err) {
+        setError(err.message || "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleJobTypeChange = (jobType) => {
-    setForm((prev) => {
-      const selected = prev.preferredJobTypes.includes(jobType)
-        ? prev.preferredJobTypes.filter((type) => type !== jobType)
-        : [...prev.preferredJobTypes, jobType];
-      return { ...prev, preferredJobTypes: selected };
-    });
   };
 
   const handleResumeChange = (e) => {
@@ -84,7 +121,7 @@ export default function Profile() {
       e.target.value = "";
       return;
     }
-    setResumePdf(fileMeta(file));
+    setResumeFile(file);
   };
 
   const handleProfileChange = (e) => {
@@ -95,7 +132,7 @@ export default function Profile() {
       return;
     }
     if (file) {
-      setProfilePicture(fileMeta(file));
+      setProfilePictureFile(file);
       const reader = new FileReader();
       reader.onload = () => setProfilePictureUrl(reader.result);
       reader.readAsDataURL(file);
@@ -103,56 +140,153 @@ export default function Profile() {
   };
 
   const startEditing = () => {
-    setForm({
-      fullName: user?.fullName || "",
-      gender: user?.gender || "",
-      address: user?.address || "",
-      dateOfBirth: user?.dateOfBirth || "",
-      education: user?.education || "",
-      experienceYears: user?.experienceYears ?? "",
-      email: user?.email || "",
-      phoneNumber: user?.phoneNumber || "",
-      desiredPosition: user?.desiredPosition || "",
-      preferredJobTypes: user?.preferredJobTypes || [],
-      portfolioLink: user?.portfolioLink || "",
-    });
-    setSkills(user?.skills || []);
-    setResumePdf(user?.resumePdf || null);
-    setProfilePicture(user?.profilePicture || null);
-    setProfilePictureUrl(user?.profilePictureUrl || "");
     setIsEditing(true);
   };
 
-  const cancelEditing = () => setIsEditing(false);
-
-  const handleSave = (e) => {
-    e.preventDefault();
-
-    const updates = {
-      ...form,
-      experienceYears:
-        form.experienceYears === "" ? "" : Number(form.experienceYears),
-      skills,
-      resumePdf,
-      profilePicture,
-      profilePictureUrl,
-    };
-
-    updateProfile(updates);
-    console.log("Profile updated (ready to send):", updates);
+  const cancelEditing = () => {
+    // Reset form to profile data
+    if (profileData) {
+      setForm({
+        fullName: profileData.full_name || "",
+        gender: profileData.gender || "",
+        address: profileData.address || "",
+        dateOfBirth: profileData.date_of_birth || "",
+        education: profileData.education || "",
+        experienceYears: profileData.experience_years ?? "",
+        email: profileData.email || "",
+        phoneNumber: profileData.phone || "",
+        desiredPosition: profileData.desired_position || "",
+        preferredJobTypes: profileData.preferred_job_type ? [profileData.preferred_job_type] : [],
+        portfolioLink: profileData.portfolio_link || "",
+      });
+      if (profileData.skills) {
+        setSelectedSkills(profileData.skills.map(s => ({ id: s.id, name: s.name })));
+      }
+    }
+    setProfilePictureUrl("");
+    setResumeFile(null);
+    setProfilePictureFile(null);
     setIsEditing(false);
   };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSaving(true);
+
+    try {
+      // Prepare form data
+      const formData = new FormData();
+      formData.append("full_name", form.fullName);
+      formData.append("gender", form.gender);
+      formData.append("date_of_birth", form.dateOfBirth);
+      formData.append("phone", form.phoneNumber);
+      formData.append("address", form.address);
+      formData.append("education", form.education || "");
+      formData.append("experience_years", form.experienceYears || "0");
+      formData.append("desired_position", form.desiredPosition || "");
+      formData.append("preferred_job_type", form.preferredJobTypes[0] || "");
+      formData.append("portfolio_link", form.portfolioLink || "");
+
+      // Add skill IDs
+      selectedSkills.forEach(skill => {
+        formData.append("skill_ids", skill.id);
+      });
+
+      // Add files if changed
+      if (resumeFile) {
+        formData.append("resume", resumeFile);
+      }
+      if (profilePictureFile) {
+        formData.append("profile_picture", profilePictureFile);
+      }
+
+      // Update profile (no user ID needed - uses token)
+      const updatedProfile = await updateUserProfile(formData);
+      setProfileData(updatedProfile);
+
+      // Recalculate profile completion
+      const completion = calculateProfileCompletionFromBackend(updatedProfile);
+      setLocalProfileCompletion(completion);
+
+      // Update context with full URLs
+      updateProfile({
+        fullName: updatedProfile.full_name,
+        email: updatedProfile.email,
+        profilePictureUrl: getFileUrl(updatedProfile.profile_picture_url),
+        gender: updatedProfile.gender,
+        address: updatedProfile.address,
+        dateOfBirth: updatedProfile.date_of_birth,
+        education: updatedProfile.education,
+        experienceYears: updatedProfile.experience_years,
+        phoneNumber: updatedProfile.phone,
+        desiredPosition: updatedProfile.desired_position,
+        preferredJobTypes: updatedProfile.preferred_job_type ? [updatedProfile.preferred_job_type] : [],
+        portfolioLink: updatedProfile.portfolio_link,
+        skills: updatedProfile.skills ? updatedProfile.skills.map(s => s.name) : [],
+      });
+
+      setProfilePictureUrl("");
+      setResumeFile(null);
+      setProfilePictureFile(null);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="profile-page">
+          <div className="profile-page__container">
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <p>Loading profile...</p>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error && !profileData) {
+    return (
+      <DashboardLayout>
+        <div className="profile-page">
+          <div className="profile-page__container">
+            <div className="auth-card__error" style={{ margin: '2rem auto', maxWidth: '600px' }}>
+              {error}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="profile-page">
         <div className="profile-page__container">
+          {error && (
+            <div className="auth-card__error" style={{ marginBottom: '1rem' }}>
+              {error}
+            </div>
+          )}
+          
           <header className="profile-header">
             <div className="profile-header__main">
               <div className="profile-header__avatar-wrap">
-                {profilePictureUrl || user?.profilePictureUrl ? (
+                {profilePictureUrl ? (
                   <img
-                    src={profilePictureUrl || user.profilePictureUrl}
+                    src={profilePictureUrl}
+                    alt={displayName}
+                    className="profile-header__avatar-img"
+                  />
+                ) : profileData?.profile_picture_url ? (
+                  <img
+                    src={getFileUrl(profileData.profile_picture_url)}
                     alt={displayName}
                     className="profile-header__avatar-img"
                   />
@@ -162,14 +296,14 @@ export default function Profile() {
               </div>
               <div>
                 <span className="profile-header__label">My Profile</span>
-                <h1 className="profile-header__title">{user?.fullName || displayName}</h1>
-                <p className="profile-header__email">{user?.email}</p>
+                <h1 className="profile-header__title">{profileData?.full_name || displayName}</h1>
+                <p className="profile-header__email">{profileData?.email}</p>
               </div>
             </div>
 
             <div className="profile-header__actions">
               <ProfileCompletionRing
-                percentage={profileCompletion}
+                percentage={localProfileCompletion}
                 size={96}
                 showLink={false}
               />
@@ -194,8 +328,9 @@ export default function Profile() {
                     type="submit"
                     form="profile-form"
                     className="profile-btn profile-btn--primary"
+                    disabled={saving}
                   >
-                    Save Changes
+                    {saving ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               )}
@@ -207,41 +342,41 @@ export default function Profile() {
               <section className="profile-section">
                 <h2 className="profile-section__title">Personal Information</h2>
                 <div className="profile-grid">
-                  <ProfileField label="Full Name" value={user?.fullName} />
-                  <ProfileField label="Gender" value={user?.gender} />
+                  <ProfileField label="Full Name" value={profileData?.full_name} />
+                  <ProfileField label="Gender" value={profileData?.gender} />
                   <ProfileField
                     label="Date of Birth"
-                    value={formatDate(user?.dateOfBirth)}
+                    value={formatDate(profileData?.date_of_birth)}
                   />
-                  <ProfileField label="Phone Number" value={user?.phoneNumber} />
-                  <ProfileField label="Address" value={user?.address} />
+                  <ProfileField label="Phone Number" value={profileData?.phone} />
+                  <ProfileField label="Address" value={profileData?.address} />
                 </div>
               </section>
 
               <section className="profile-section">
                 <h2 className="profile-section__title">Professional Details</h2>
                 <div className="profile-grid">
-                  <ProfileField label="Education" value={user?.education} />
+                  <ProfileField label="Education" value={profileData?.education} />
                   <ProfileField
                     label="Experience"
                     value={
-                      user?.experienceYears !== "" &&
-                      user?.experienceYears != null
-                        ? `${user.experienceYears} years`
+                      profileData?.experience_years !== "" &&
+                      profileData?.experience_years != null
+                        ? `${profileData.experience_years} years`
                         : ""
                     }
                   />
                   <ProfileField
                     label="Desired Position"
-                    value={user?.desiredPosition}
+                    value={profileData?.desired_position}
                   />
                 </div>
                 <ProfileField label="Skills">
                   <div className="profile-skills">
-                    {user?.skills?.length ? (
-                      user.skills.map((skill) => (
-                        <span key={skill} className="profile-skill">
-                          {skill}
+                    {profileData?.skills?.length ? (
+                      profileData.skills.map((skill) => (
+                        <span key={skill.id} className="profile-skill">
+                          {skill.name}
                         </span>
                       ))
                     ) : (
@@ -249,14 +384,12 @@ export default function Profile() {
                     )}
                   </div>
                 </ProfileField>
-                <ProfileField label="Preferred Job Types">
+                <ProfileField label="Preferred Job Type">
                   <div className="profile-skills">
-                    {user?.preferredJobTypes?.length ? (
-                      user.preferredJobTypes.map((type) => (
-                        <span key={type} className="profile-skill profile-skill--muted">
-                          {type}
-                        </span>
-                      ))
+                    {profileData?.preferred_job_type ? (
+                      <span className="profile-skill profile-skill--muted">
+                        {profileData.preferred_job_type}
+                      </span>
                     ) : (
                       <span className="profile-field__value">—</span>
                     )}
@@ -267,28 +400,38 @@ export default function Profile() {
               <section className="profile-section">
                 <h2 className="profile-section__title">Contact & Files</h2>
                 <div className="profile-grid">
-                  <ProfileField label="Email" value={user?.email} />
+                  <ProfileField label="Email" value={profileData?.email} />
                   <ProfileField label="Portfolio Link">
-                    {user?.portfolioLink ? (
+                    {profileData?.portfolio_link ? (
                       <a
-                        href={user.portfolioLink}
+                        href={profileData.portfolio_link}
                         target="_blank"
                         rel="noreferrer"
                         className="profile-link"
                       >
-                        {user.portfolioLink}
+                        {profileData.portfolio_link}
+                      </a>
+                    ) : (
+                      <span className="profile-field__value">—</span>
+                    )}
+                  </ProfileField>
+                  <ProfileField label="Resume PDF">
+                    {profileData?.resume_url ? (
+                      <a
+                        href={getFileUrl(profileData.resume_url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="profile-link"
+                      >
+                        View Resume
                       </a>
                     ) : (
                       <span className="profile-field__value">—</span>
                     )}
                   </ProfileField>
                   <ProfileField
-                    label="Resume PDF"
-                    value={user?.resumePdf?.name}
-                  />
-                  <ProfileField
                     label="Profile Picture"
-                    value={user?.profilePicture?.name || (user?.profilePictureUrl ? "Uploaded" : "")}
+                    value={profileData?.profile_picture_url ? "Uploaded" : "—"}
                   />
                 </div>
               </section>
@@ -312,9 +455,11 @@ export default function Profile() {
                   >
                     Upload PDF Resume
                   </button>
-                  {resumePdf?.name && (
-                    <span className="profile-upload__file">{resumePdf.name}</span>
-                  )}
+                  {resumeFile ? (
+                    <span className="profile-upload__file">{resumeFile.name}</span>
+                  ) : profileData?.resume_url ? (
+                    <span className="profile-upload__file">Current: Uploaded</span>
+                  ) : null}
                 </div>
               </section>
 
@@ -391,7 +536,10 @@ export default function Profile() {
                 <div className="profile-form__field">
                   <label>Skills</label>
                   <div className="profile-form__skills">
-                    <SkillCapsules skills={skills} onChange={setSkills} />
+                    <SkillSelector
+                      selectedSkills={selectedSkills}
+                      onChange={setSelectedSkills}
+                    />
                   </div>
                 </div>
                 <div className="profile-form__row">
@@ -426,21 +574,22 @@ export default function Profile() {
                     onChange={handleChange}
                   />
                 </div>
-                <fieldset className="profile-form__fieldset">
-                  <legend>Preferred Job Types</legend>
-                  <div className="profile-form__checkboxes">
+                <div className="profile-form__field">
+                  <label htmlFor="preferredJobType">Preferred Job Type</label>
+                  <select
+                    id="preferredJobType"
+                    name="preferredJobType"
+                    value={form.preferredJobTypes[0] || ""}
+                    onChange={(e) => setForm(prev => ({ ...prev, preferredJobTypes: e.target.value ? [e.target.value] : [] }))}
+                  >
+                    <option value="">Select job type</option>
                     {JOB_TYPES.map((jobType) => (
-                      <label key={jobType} className="profile-form__checkbox">
-                        <input
-                          type="checkbox"
-                          checked={form.preferredJobTypes.includes(jobType)}
-                          onChange={() => handleJobTypeChange(jobType)}
-                        />
-                        <span>{jobType}</span>
-                      </label>
+                      <option key={jobType} value={jobType}>
+                        {jobType}
+                      </option>
                     ))}
-                  </div>
-                </fieldset>
+                  </select>
+                </div>
               </section>
 
               <section className="profile-section">
@@ -485,11 +634,13 @@ export default function Profile() {
                     >
                       Choose Image
                     </button>
-                    {profilePicture?.name && (
+                    {profilePictureFile ? (
                       <span className="profile-upload__file">
-                        {profilePicture.name}
+                        {profilePictureFile.name}
                       </span>
-                    )}
+                    ) : profileData?.profile_picture_url ? (
+                      <span className="profile-upload__file">Current: Uploaded</span>
+                    ) : null}
                   </div>
                 </div>
               </section>

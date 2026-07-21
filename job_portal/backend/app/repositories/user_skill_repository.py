@@ -25,3 +25,9 @@ class UserSkillRepository:
             .filter(Skill.id == skill_id)
             .first()
         )
+
+    @staticmethod
+    def delete_by_user_id(db: Session, user_id: int):
+        """Delete all skills for a user"""
+        db.query(UserSkill).filter(UserSkill.user_id == user_id).delete()
+        db.flush()

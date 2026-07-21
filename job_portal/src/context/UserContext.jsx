@@ -1,72 +1,36 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { calculateProfileCompletion } from "../utils/profile";
-
-const STORAGE_KEY = "careerhub_user";
+import { logoutUser as authLogoutUser, getStoredUser } from "../services/auth";
+import { getFileUrl } from "../services/api";
 
 const UserContext = createContext(null);
 
-function readStoredUser() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function createUserFromLogin(email, role = "candidate") {
-  const namePart = email.split("@")[0] || "User";
-  const fullName = namePart
-    .split(/[._-]/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-
-  return {
-    fullName,
-    gender: "",
-    address: "",
-    dateOfBirth: "",
-    skills: [],
-    education: "",
-    experienceYears: "",
-    email,
-    phoneNumber: "",
-    desiredPosition: "",
-    preferredJobTypes: [],
-    portfolioLink: "",
-    profilePictureUrl: "",
-    resumePdf: null,
-    profilePicture: null,
-    isLoggedIn: true,
-    role,
-  };
-}
-
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(() => readStoredUser());
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+  const loadUserFromStorage = () => {
+    const storedUser = getStoredUser();
+    if (storedUser) {
+      return {
+        id: storedUser.id,
+        fullName: storedUser.full_name,
+        email: storedUser.email,
+        profilePictureUrl: getFileUrl(storedUser.profile_picture_url), // Convert to full URL
+        isLoggedIn: true,
+        role: "candidate",
+      };
     }
-  }, [user]);
+    return null;
+  };
+
+  const [user, setUser] = useState(loadUserFromStorage);
 
   const profileCompletion = useMemo(
     () => calculateProfileCompletion(user),
     [user]
   );
 
-  const login = (email, role = "candidate") => {
-    const stored = readStoredUser();
-    if (stored?.email === email.trim()) {
-      setUser({ ...stored, isLoggedIn: true, role: stored.role || role });
-      return;
-    }
-
-    setUser(createUserFromLogin(email.trim(), role));
+  const refreshUser = () => {
+    setUser(loadUserFromStorage());
   };
 
   const register = (profile, role = "candidate") => {
@@ -85,6 +49,7 @@ export function UserProvider({ children }) {
   };
 
   const logout = () => {
+    authLogoutUser(); // Clear all auth data from localStorage
     setUser(null);
   };
 
@@ -92,10 +57,10 @@ export function UserProvider({ children }) {
     user,
     isLoggedIn: Boolean(user?.isLoggedIn),
     profileCompletion,
-    login,
     register,
     updateProfile,
     logout,
+    refreshUser, // Expose refresh function
   };
 
   return (

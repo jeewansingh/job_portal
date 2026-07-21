@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import SkillCapsules from "../../components/SkillCapsules";
+import SkillSelector from "../../components/SkillSelector";
 import { useUser } from "../../context/UserContext";
+import { fetchSkills } from "../../services/skills";
+import { registerUser } from "../../services/auth";
 import "../../styles/Auth.css";
 
 const JOB_TYPES = [
@@ -56,11 +58,31 @@ export default function Register() {
   const { register } = useUser();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
-  const [skills, setSkills] = useState([]);
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [availableSkills, setAvailableSkills] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [resumePdf, setResumePdf] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
   const resumeInputRef = useRef(null);
   const profileInputRef = useRef(null);
+
+  // Fetch available skills on component mount
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        // console.log("Fetching skills from backend...");
+        const skills = await fetchSkills();
+        // console.log("Skills fetched successfully:", skills);
+        setAvailableSkills(skills);
+      } catch (err) {
+        console.error("Failed to fetch skills:", err);
+        setError("Failed to load skills. You can still register without selecting skills.");
+      }
+    };
+
+    loadSkills();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -99,92 +121,79 @@ export default function Register() {
     setProfilePicture(file);
   };
 
-  const buildPayload = () => ({
-    fullName: form.fullName.trim(),
-    gender: form.gender,
-    address: form.address.trim(),
-    dateOfBirth: form.dateOfBirth,
-    skills,
-    education: form.education.trim(),
-    experienceYears: form.experienceYears
-      ? Number(form.experienceYears)
-      : null,
-    email: form.email.trim(),
-    phoneNumber: form.phoneNumber.trim(),
-    desiredPosition: form.desiredPosition.trim(),
-    preferredJobTypes: form.preferredJobTypes,
-    portfolioLink: form.portfolioLink.trim(),
-    password: form.password,
-    agreedToTerms: form.agreedToTerms,
-    resumePdf: fileMeta(resumePdf),
-    profilePicture: fileMeta(profilePicture),
-  });
-
-  const buildFormData = (payload) => {
-    const formData = new FormData();
-
-    formData.append("fullName", payload.fullName);
-    formData.append("gender", payload.gender);
-    formData.append("address", payload.address);
-    formData.append("dateOfBirth", payload.dateOfBirth);
-    formData.append("skills", JSON.stringify(payload.skills));
-    formData.append("education", payload.education);
-    if (payload.experienceYears !== null) {
-      formData.append("experienceYears", String(payload.experienceYears));
-    }
-    formData.append("email", payload.email);
-    formData.append("phoneNumber", payload.phoneNumber);
-    formData.append("desiredPosition", payload.desiredPosition);
-    formData.append(
-      "preferredJobTypes",
-      JSON.stringify(payload.preferredJobTypes)
-    );
-    formData.append("portfolioLink", payload.portfolioLink);
-    formData.append("password", payload.password);
-    formData.append("agreedToTerms", String(payload.agreedToTerms));
-
-    if (resumePdf) formData.append("resumePdf", resumePdf);
-    if (profilePicture) formData.append("profilePicture", profilePicture);
-
-    return formData;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
     if (!form.agreedToTerms) {
-      alert("Please agree to the terms and conditions.");
+      setError("Please agree to the terms and conditions.");
       return;
     }
 
-    const payload = buildPayload();
-    let profilePictureUrl = "";
+    setLoading(true);
+    setError("");
 
-    if (profilePicture) {
-      profilePictureUrl = await readFileAsDataURL(profilePicture);
+    try {
+      // Build FormData for multipart/form-data request
+      const formData = new FormData();
+      
+      // Map frontend field names to backend field names
+      formData.append("full_name", form.fullName.trim());
+      formData.append("gender", form.gender);
+      formData.append("date_of_birth", form.dateOfBirth);
+      formData.append("phone", form.phoneNumber.trim());
+      formData.append("email", form.email.trim());
+      formData.append("password", form.password);
+      formData.append("address", form.address.trim());
+      formData.append("education", form.education.trim() || "");
+      formData.append("experience_years", form.experienceYears || "0");
+      formData.append("desired_position", form.desiredPosition.trim() || "");
+      
+      // Convert preferredJobTypes array to single string (or send first one)
+      const preferredJobType = form.preferredJobTypes.length > 0 
+        ? form.preferredJobTypes[0] 
+        : "";
+      formData.append("preferred_job_type", preferredJobType);
+      
+      formData.append("portfolio_link", form.portfolioLink.trim() || "");
+      
+      // Add skill IDs (only if skills are selected)
+      if (selectedSkills.length > 0) {
+        selectedSkills.forEach(skill => {
+          formData.append("skill_ids", skill.id);
+        });
+      }
+      
+      // Add files if present
+      if (resumePdf) {
+        formData.append("resume", resumePdf);
+      }
+      if (profilePicture) {
+        formData.append("profile_picture", profilePicture);
+      }
+
+      // Call backend API
+      const userData = await registerUser(formData);
+      
+      // Store user data in context
+      register({
+        ...userData,
+        profilePictureUrl: userData.profile_picture_url,
+      }, "candidate");
+      
+      // Navigate to dashboard
+      navigate("/dashboard");
+      
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const profileData = {
-      ...payload,
-      profilePictureUrl,
-    };
-
-    console.log("Register payload (ready to send):", profileData);
-    console.log("Register JSON:", JSON.stringify(profileData, null, 2));
-
-    const formData = buildFormData(payload);
-    console.log("Register FormData entries (for multipart upload):");
-    for (const [key, value] of formData.entries()) {
-      console.log(`  ${key}:`, value);
-    }
-
-    register(profileData, "candidate");
-    navigate("/dashboard");
   };
 
   return (
@@ -207,6 +216,12 @@ export default function Register() {
           <p className="auth-card__subtitle">
             Create your profile and start applying to top jobs
           </p>
+
+          {error && (
+            <div className="auth-card__error">
+              {error}
+            </div>
+          )}
 
           <div className="auth-section">
             <h2 className="auth-section__title">Quick fill from resume</h2>
@@ -326,7 +341,15 @@ export default function Register() {
 
             <div className="auth-field">
               <label htmlFor="skills">Skills</label>
-              <SkillCapsules skills={skills} onChange={setSkills} />
+              <SkillSelector
+                availableSkills={availableSkills}
+                selectedSkills={selectedSkills}
+                onChange={setSelectedSkills}
+                required={false}
+              />
+              <p className="auth-field__hint">
+                Search and select skills from the dropdown. Optional but recommended.
+              </p>
             </div>
 
             <div className="auth-row">
@@ -502,8 +525,8 @@ export default function Register() {
             </span>
           </label>
 
-          <button type="submit" className="auth-card__btn">
-            Create Account
+          <button type="submit" className="auth-card__btn" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
 
           <p className="auth-card__footer">

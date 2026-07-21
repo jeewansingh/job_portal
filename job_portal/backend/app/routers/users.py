@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
-from app.schemas.user import UserResponse
-from app.services.user_service import register_user
+from app.core.dependencies import get_current_user_id
+from app.schemas.user import UserResponse, UserProfileResponse
+from app.services.user_service import register_user, get_user_profile, update_user_profile
 
 router = APIRouter(
     prefix="/users",
@@ -74,6 +75,74 @@ async def register(
         phone=phone,
         email=email,
         password=password,
+        address=address,
+        education=education,
+        experience_years=experience_years,
+        desired_position=desired_position,
+        preferred_job_type=preferred_job_type,
+        portfolio_link=portfolio_link,
+        skill_ids=skill_ids,
+        resume=resume,
+        profile_picture=profile_picture,
+    )
+
+
+@router.get(
+    "/me/profile",
+    response_model=UserProfileResponse
+)
+async def get_my_profile(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """
+    Get current user's profile with skills.
+    Uses JWT token to identify the user - no user_id in URL needed.
+    
+    Returns:
+        User profile including skills list
+    """
+    return await get_user_profile(db=db, user_id=current_user_id)
+
+
+@router.put(
+    "/me/profile",
+    response_model=UserProfileResponse
+)
+async def update_my_profile(
+    full_name: str = Form(...),
+    gender: str = Form(...),
+    date_of_birth: str = Form(...),
+    phone: str = Form(...),
+    address: str = Form(...),
+    education: Optional[str] = Form(None),
+    experience_years: float = Form(0),
+    desired_position: Optional[str] = Form(None),
+    preferred_job_type: Optional[str] = Form(None),
+    portfolio_link: Optional[str] = Form(None),
+    skill_ids: Optional[List[int]] = Form(None),
+    resume: Optional[UploadFile] = File(None),
+    profile_picture: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """
+    Update current user's profile.
+    Uses JWT token to identify the user - no user_id in URL needed.
+    
+    - Date format: YYYY-MM-DD (e.g., 1995-05-15)
+    - Skill IDs: Pass skill IDs as integers (e.g., skill_ids=1, skill_ids=2)
+    - Resume: PDF only (max 10MB)
+    - Profile Picture: JPG, JPEG, PNG (max 5MB)
+    - Files are optional - only upload if changing
+    """
+    return await update_user_profile(
+        db=db,
+        user_id=current_user_id,
+        full_name=full_name,
+        gender=gender,
+        date_of_birth=date_of_birth,
+        phone=phone,
         address=address,
         education=education,
         experience_years=experience_years,
