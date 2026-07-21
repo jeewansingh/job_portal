@@ -84,9 +84,9 @@ export default function RecruiterDashboard() {
             
 
             <div className="recruiter-dashboard__hero-actions">
-              <a href="#posted-jobs" className="recruiter-dashboard__primary-action">
+              <Link to="/recruiter/post-job" className="recruiter-dashboard__primary-action">
                 Post Job
-              </a>
+              </Link>
               <Link to="/recruiter/applications" className="recruiter-dashboard__secondary-action">
                 View Applicants
               </Link>

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
 import { useUser } from "../../context/UserContext";
+import { getRecruiterProfile, updateRecruiterProfile } from "../../services/recruiter";
+import { getFileUrl } from "../../services/api";
 import "../../styles/RecruiterDashboard.css";
 import "../../styles/RecruiterPostJob.css";
 import "../../styles/RecruiterJobs.css";
@@ -67,21 +69,55 @@ function ProfileField({ label, value, children }) {
 }
 
 export default function RecruiterProfile() {
-  const { user, updateProfile } = useUser();
+  const { user, updateProfile: updateContextProfile } = useUser();
+  const [recruiterData, setRecruiterData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(() => mapUserToForm(user));
   const [preview, setPreview] = useState(user?.companyLogoUrl || "");
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState(false);
+  const [error, setError] = useState("");
   const [industryOpen, setIndustryOpen] = useState(false);
   const logoInputRef = useRef(null);
   const industryWrapRef = useRef(null);
   const toastTimerRef = useRef(null);
 
+  // Fetch recruiter profile from backend on mount
   useEffect(() => {
-    setForm(mapUserToForm(user));
-    setPreview(user?.companyLogoUrl || "");
-    setIsEditing(false);
-  }, [user]);
+    async function fetchProfile() {
+      try {
+        setLoading(true);
+        const profile = await getRecruiterProfile();
+        
+        // Convert snake_case to camelCase for frontend
+        const formattedProfile = {
+          id: profile.id,
+          fullName: profile.full_name,
+          workEmail: profile.work_email,
+          companyName: profile.company_name,
+          industry: profile.industry,
+          website: profile.website,
+          country: profile.country,
+          city: profile.city,
+          workPhoneNumber: profile.work_phone,
+          companyDescription: profile.company_description,
+          companyLogoUrl: getFileUrl(profile.company_logo_url),
+          isActive: profile.is_active,
+        };
+        
+        setRecruiterData(formattedProfile);
+        setForm(mapUserToForm(formattedProfile));
+        setPreview(formattedProfile.companyLogoUrl || "");
+      } catch (err) {
+        console.error("Failed to fetch recruiter profile:", err);
+        setError(err.message || "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -124,8 +160,8 @@ export default function RecruiterProfile() {
     }
 
     if (!file) {
-      setForm((prev) => ({ ...prev, companyLogo: null, companyLogoUrl: user?.companyLogoUrl || "" }));
-      setPreview(user?.companyLogoUrl || "");
+      setForm((prev) => ({ ...prev, companyLogo: null, companyLogoUrl: recruiterData?.companyLogoUrl || "" }));
+      setPreview(recruiterData?.companyLogoUrl || "");
       return;
     }
 
@@ -135,57 +171,122 @@ export default function RecruiterProfile() {
   };
 
   const resetForm = () => {
-    setForm(mapUserToForm(user));
-    setPreview(user?.companyLogoUrl || "");
+    setForm(mapUserToForm(recruiterData));
+    setPreview(recruiterData?.companyLogoUrl || "");
     setIndustryOpen(false);
     setIsEditing(false);
+    setError("");
     if (logoInputRef.current) {
       logoInputRef.current.value = "";
     }
   };
 
   const startEditing = () => {
-    setForm(mapUserToForm(user));
-    setPreview(user?.companyLogoUrl || "");
+    setForm(mapUserToForm(recruiterData));
+    setPreview(recruiterData?.companyLogoUrl || "");
     setIndustryOpen(false);
+    setError("");
     setIsEditing(true);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
 
-    let companyLogoUrl = form.companyLogoUrl || "";
-    if (form.companyLogo) {
-      companyLogoUrl = await readFileAsDataURL(form.companyLogo);
+    try {
+      // Build FormData for backend
+      const formData = new FormData();
+      formData.append("full_name", form.fullName.trim());
+      formData.append("work_phone", form.workPhoneNumber.trim());
+      formData.append("country", form.country.trim());
+      formData.append("city", form.city.trim());
+      formData.append("company_name", form.companyName.trim());
+      formData.append("industry", form.industry);
+      
+      if (form.website.trim()) {
+        formData.append("website", form.website.trim());
+      }
+      if (form.companyDescription.trim()) {
+        formData.append("company_description", form.companyDescription.trim());
+      }
+      if (form.companyLogo) {
+        formData.append("company_logo", form.companyLogo);
+      }
+
+      // Call backend API to update profile
+      const updatedProfile = await updateRecruiterProfile(formData);
+      
+      // Convert response to frontend format
+      const formattedProfile = {
+        id: updatedProfile.id,
+        fullName: updatedProfile.full_name,
+        workEmail: updatedProfile.work_email,
+        companyName: updatedProfile.company_name,
+        industry: updatedProfile.industry,
+        website: updatedProfile.website,
+        country: updatedProfile.country,
+        city: updatedProfile.city,
+        workPhoneNumber: updatedProfile.work_phone,
+        companyDescription: updatedProfile.company_description,
+        companyLogoUrl: getFileUrl(updatedProfile.company_logo_url),
+        isActive: updatedProfile.is_active,
+      };
+
+      // Update local state
+      setRecruiterData(formattedProfile);
+      setPreview(formattedProfile.companyLogoUrl || "");
+      
+      // Update context (for navbar, etc.)
+      updateContextProfile({
+        fullName: formattedProfile.fullName,
+        email: formattedProfile.workEmail,
+        companyName: formattedProfile.companyName,
+        companyLogoUrl: formattedProfile.companyLogoUrl,
+        role: "recruiter",
+        isLoggedIn: true,
+      });
+
+      setToast(true);
+      setIsEditing(false);
+      
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+      toastTimerRef.current = window.setTimeout(() => setToast(false), 1400);
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      setError(err.message || "Failed to update profile");
     }
-
-    updateProfile({
-      fullName: form.fullName.trim(),
-      workEmail: form.workEmail.trim(),
-      email: form.workEmail.trim(),
-      companyName: form.companyName.trim(),
-      industry: form.industry,
-      website: form.website.trim(),
-      country: form.country.trim(),
-      city: form.city.trim(),
-      workPhoneNumber: form.workPhoneNumber.trim(),
-      companyDescription: form.companyDescription.trim(),
-      companyLogoUrl,
-      role: "recruiter",
-      isLoggedIn: true,
-    });
-
-    setPreview(companyLogoUrl);
-    setToast(true);
-    setIsEditing(false);
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
-    }
-    toastTimerRef.current = window.setTimeout(() => setToast(false), 1400);
   };
 
-  const displayName = user?.fullName || "Recruiter Profile";
+  const displayName = recruiterData?.fullName || "Recruiter Profile";
   const initial = displayName.charAt(0).toUpperCase();
+
+  if (loading) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Profile" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <p>Loading profile...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error && !recruiterData) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Profile" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
+            <p>Error: {error}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="recruiter-dashboard">
@@ -214,9 +315,9 @@ export default function RecruiterProfile() {
               </div>
               <div>
                 <span className="recruiter-profile__label">Company Profile</span>
-                <h2 className="recruiter-profile__title">{user?.companyName || "Your Company Name"}</h2>
+                <h2 className="recruiter-profile__title">{recruiterData?.companyName || "Your Company Name"}</h2>
                 <p className="recruiter-profile__email">
-                  {user?.workEmail || user?.email || "No email available"}
+                  {recruiterData?.workEmail || "No email available"}
                 </p>
               </div>
             </div>
@@ -235,40 +336,52 @@ export default function RecruiterProfile() {
               <section className="recruiter-profile__section">
                 <h3 className="recruiter-profile__section-title">Account Details</h3>
                 <div className="recruiter-profile__grid">
-                  <ProfileField label="Full Name" value={user?.fullName} />
-                  <ProfileField label="Work Email" value={user?.workEmail || user?.email} />
+                  <ProfileField label="Full Name" value={recruiterData?.fullName} />
+                  <ProfileField label="Work Email" value={recruiterData?.workEmail} />
                 </div>
               </section>
 
               <section className="recruiter-profile__section">
                 <h3 className="recruiter-profile__section-title">Company Details</h3>
                 <div className="recruiter-profile__grid">
-                  <ProfileField label="Company Name" value={user?.companyName} />
-                  <ProfileField label="Industry" value={user?.industry} />
+                  <ProfileField label="Company Name" value={recruiterData?.companyName} />
+                  <ProfileField label="Industry" value={recruiterData?.industry} />
                   <ProfileField label="Website">
-                    {user?.website ? (
-                      <a href={user.website} target="_blank" rel="noreferrer" className="recruiter-profile__link">
-                        {user.website}
+                    {recruiterData?.website ? (
+                      <a href={recruiterData.website} target="_blank" rel="noreferrer" className="recruiter-profile__link">
+                        {recruiterData.website}
                       </a>
                     ) : (
                       <span className="recruiter-profile__field-value">—</span>
                     )}
                   </ProfileField>
-                  <ProfileField label="Country" value={user?.country} />
-                  <ProfileField label="City" value={user?.city} />
-                  <ProfileField label="Work Phone Number" value={user?.workPhoneNumber} />
+                  <ProfileField label="Country" value={recruiterData?.country} />
+                  <ProfileField label="City" value={recruiterData?.city} />
+                  <ProfileField label="Work Phone Number" value={recruiterData?.workPhoneNumber} />
                 </div>
               </section>
 
               <section className="recruiter-profile__section">
                 <h3 className="recruiter-profile__section-title">Company Description</h3>
                 <div className="recruiter-profile__description">
-                  <p>{user?.companyDescription || "—"}</p>
+                  <p>{recruiterData?.companyDescription || "—"}</p>
                 </div>
               </section>
             </div>
           ) : (
             <form id="recruiter-profile-form" className="recruiter-post-job__form recruiter-profile__form" onSubmit={handleSubmit}>
+              {error && (
+                <div style={{ 
+                  padding: '1rem', 
+                  marginBottom: '1rem', 
+                  background: '#fee', 
+                  color: '#c00', 
+                  borderRadius: '8px' 
+                }}>
+                  {error}
+                </div>
+              )}
+              
               <section className="recruiter-profile__section recruiter-profile__section--hero">
                 <h3 className="recruiter-profile__section-title">Profile Photo</h3>
                 <div className="recruiter-profile__summary">
@@ -295,12 +408,12 @@ export default function RecruiterProfile() {
 
                   <div className="recruiter-profile__summary-copy">
                     <span className="recruiter-applicant-profile__field-label">Profile Preview</span>
-                    <h3>{form.companyName || user?.companyName || "Your Company Name"}</h3>
-                    <p>{form.companyDescription || user?.companyDescription || "Company description appears here."}</p>
+                    <h3>{form.companyName || recruiterData?.companyName || "Your Company Name"}</h3>
+                    <p>{form.companyDescription || recruiterData?.companyDescription || "Company description appears here."}</p>
                     <div className="recruiter-job-detail__tag-list">
-                      <span className="recruiter-pill">{form.industry || user?.industry || "Industry"}</span>
-                      <span className="recruiter-pill">{form.country || user?.country || "Country"}</span>
-                      <span className="recruiter-pill">{form.city || user?.city || "City"}</span>
+                      <span className="recruiter-pill">{form.industry || recruiterData?.industry || "Industry"}</span>
+                      <span className="recruiter-pill">{form.country || recruiterData?.country || "Country"}</span>
+                      <span className="recruiter-pill">{form.city || recruiterData?.city || "City"}</span>
                     </div>
                   </div>
                 </div>

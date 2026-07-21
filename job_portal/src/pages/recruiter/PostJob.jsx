@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
+import { postJob } from "../../services/job";
+import { fetchSkills } from "../../services/skills";
 import "../../styles/RecruiterPostJob.css";
 
 const CATEGORY_OPTIONS = [
@@ -31,29 +33,6 @@ const EMPLOYMENT_TYPE_OPTIONS = [
   "Internship",
 ];
 
-const SKILL_OPTIONS = [
-  "React",
-  "JavaScript",
-  "TypeScript",
-  "Node.js",
-  "Express",
-  "MongoDB",
-  "PostgreSQL",
-  "UI/UX Design",
-  "Figma",
-  "HTML",
-  "CSS",
-  "Python",
-  "Java",
-  "C#",
-  "Communication",
-  "Leadership",
-  "Project Management",
-  "SQL",
-  "AWS",
-  "Docker",
-];
-
 const initialForm = {
   jobTitle: "",
   category: "",
@@ -76,7 +55,11 @@ export default function PostJob() {
   const { user } = useUser();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
+  const [availableSkills, setAvailableSkills] = useState([]);
+  const [skillsLoading, setSkillsLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [employmentTypeOpen, setEmploymentTypeOpen] = useState(false);
   const [skillInput, setSkillInput] = useState("");
@@ -85,6 +68,24 @@ export default function PostJob() {
   const employmentTypeWrapRef = useRef(null);
   const skillWrapRef = useRef(null);
   const toastTimerRef = useRef(null);
+
+  // Fetch skills from backend on mount
+  useEffect(() => {
+    async function loadSkills() {
+      try {
+        setSkillsLoading(true);
+        const skills = await fetchSkills();
+        setAvailableSkills(skills);
+      } catch (err) {
+        console.error("Failed to fetch skills:", err);
+        setError("Failed to load skills from server");
+      } finally {
+        setSkillsLoading(false);
+      }
+    }
+    
+    loadSkills();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -118,12 +119,12 @@ export default function PostJob() {
 
   const skillSuggestions = useMemo(() => {
     const query = skillInput.trim().toLowerCase();
-    return SKILL_OPTIONS.filter(
-      (item) =>
-        item.toLowerCase().includes(query) &&
-        !form.skills.some((skill) => skill.toLowerCase() === item.toLowerCase())
+    return availableSkills.filter(
+      (skill) =>
+        skill.name.toLowerCase().includes(query) &&
+        !form.skills.some((selectedSkill) => selectedSkill.toLowerCase() === skill.name.toLowerCase())
     );
-  }, [form.skills, skillInput]);
+  }, [form.skills, skillInput, availableSkills]);
 
   const setField = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -174,38 +175,55 @@ export default function PostJob() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const payload = {
-      recruiterName: user?.fullName || "",
-      companyName: user?.companyName || "",
-      jobTitle: form.jobTitle.trim(),
-      category: form.category.trim(),
-      employmentType: form.employmentType,
-      experience: form.experience.trim(),
-      salary: form.salary.trim(),
-      skills: form.skills,
-      openings: form.openings ? Number(form.openings) : null,
-      jobDescription: form.jobDescription.trim(),
-      responsibilities: form.responsibilities.trim(),
-      deadline: form.deadline,
-      location: form.location.trim(),
-    };
+    try {
+      // Build FormData for backend
+      const formData = new FormData();
+      formData.append("job_title", form.jobTitle.trim());
+      formData.append("category", form.category.trim());
+      formData.append("employment_type", form.employmentType);
+      formData.append("experience_years", form.experience || "0");
+      formData.append("salary_per_month", form.salary.trim());
+      formData.append("openings", form.openings || "1");
+      formData.append("location", form.location.trim());
+      formData.append("job_description", form.jobDescription.trim());
+      formData.append("job_specification", form.responsibilities.trim());
+      formData.append("deadline", form.deadline);
+      
+      // Add skill IDs (need to find IDs from skill names)
+      if (form.skills && form.skills.length > 0) {
+        form.skills.forEach((skillName) => {
+          const skill = availableSkills.find(s => s.name === skillName);
+          if (skill) {
+            formData.append("skill_ids", skill.id.toString());
+          }
+        });
+      }
 
-    console.log("Post job payload (ready to send):", payload);
-    console.log("Post job JSON:", JSON.stringify(payload, null, 2));
+      // Call backend API
+      const response = await postJob(formData);
+      
+      console.log("Job posted successfully:", response);
 
-    setShowToast(true);
+      setShowToast(true);
 
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+
+      toastTimerRef.current = window.setTimeout(() => {
+        setShowToast(false);
+        navigate("/recruiter/manage-jobs");
+      }, 1200);
+    } catch (err) {
+      console.error("Failed to post job:", err);
+      setError(err.message || "Failed to post job");
+      setLoading(false);
     }
-
-    toastTimerRef.current = window.setTimeout(() => {
-      setShowToast(false);
-      navigate("/recruiter/dashboard");
-    }, 1200);
   };
 
   return (
@@ -225,6 +243,18 @@ export default function PostJob() {
 
         <div className="recruiter-post-job__content">
           <form className="recruiter-post-job__form" onSubmit={handleSubmit}>
+            {error && (
+              <div style={{ 
+                padding: '1rem', 
+                marginBottom: '1rem', 
+                background: '#fee', 
+                color: '#c00', 
+                borderRadius: '8px' 
+              }}>
+                {error}
+              </div>
+            )}
+            
             <section className="recruiter-post-job__section">
               <h2>Job basics</h2>
               <div className="recruiter-post-job__grid">
@@ -407,21 +437,24 @@ export default function PostJob() {
                   />
                 </div>
                 <p className="recruiter-post-job__hint">
-                  Search and pick from the dropdown. You can add multiple skills, but only from the predefined list.
+                  {skillsLoading 
+                    ? "Loading skills..." 
+                    : "Search and pick from the dropdown. You can add multiple skills, but only from the predefined list."
+                  }
                 </p>
                 {skillOpen && skillSuggestions.length > 0 && (
                   <div className="recruiter-post-job__dropdown recruiter-post-job__dropdown--skills" role="listbox">
-                    {skillSuggestions.map((option) => (
+                    {skillSuggestions.map((skill) => (
                       <button
-                        key={option}
+                        key={skill.id}
                         type="button"
                         className="recruiter-post-job__option"
                         onMouseDown={(event) => {
                           event.preventDefault();
-                          selectSkill(option);
+                          selectSkill(skill.name);
                         }}
                       >
-                        {option}
+                        {skill.name}
                       </button>
                     ))}
                   </div>
@@ -478,8 +511,8 @@ export default function PostJob() {
             </section>
 
             <div className="recruiter-post-job__actions">
-              <button type="submit" className="recruiter-post-job__publish-btn">
-                Publish Job
+              <button type="submit" className="recruiter-post-job__publish-btn" disabled={loading}>
+                {loading ? "Publishing..." : "Publish Job"}
               </button>
             </div>
           </form>

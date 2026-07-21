@@ -1,82 +1,85 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import { recentApplications, applicationStatusLabels } from "../../data/applications";
-import { recommendedJobs } from "../../data/jobs";
+import { getJobDetails, getBrowseJobs } from "../../services/job";
+import { getFileUrl } from "../../services/api";
 import DashboardLayout from "../../components/DashboardLayout";
 import JobCard from "../../components/JobCard";
 import "../../styles/Dashboard.css";
 import "../../styles/JobDetails.css";
 
-const APPLICATION_STORAGE_KEY = "job-portal-application-status";
-
-const statusClassMap = {
-  Applied: "dashboard__detail-btn--applied",
-  "Under Review": "dashboard__detail-btn--review",
-  Interview: "dashboard__detail-btn--interview",
-  Offer: "dashboard__detail-btn--offer",
-  Rejected: "dashboard__detail-btn--rejected",
-};
-
-function getStoredApplicationStatus(jobId) {
-  const matchFromData = recentApplications.find((application) => application.jobId === jobId);
-  if (matchFromData) {
-    return matchFromData.status;
-  }
-
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const storedValue = window.localStorage.getItem(APPLICATION_STORAGE_KEY);
-  if (!storedValue) {
-    return null;
-  }
-
-  try {
-    const storedStatuses = JSON.parse(storedValue);
-    return storedStatuses?.[jobId] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function setStoredApplicationStatus(jobId, status) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const storedValue = window.localStorage.getItem(APPLICATION_STORAGE_KEY);
-  const storedStatuses = storedValue ? JSON.parse(storedValue) : {};
-  storedStatuses[jobId] = status;
-  window.localStorage.setItem(APPLICATION_STORAGE_KEY, JSON.stringify(storedStatuses));
-}
-
 export default function JobDetails() {
   const { jobId } = useParams();
   const navigate = useNavigate();
-  const { isLoggedIn } = useUser();
-  const parsedJobId = Number(jobId);
-  const [applicationStatus, setApplicationStatus] = useState(() => getStoredApplicationStatus(parsedJobId));
+  const { isLoggedIn, user } = useUser();
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [applicationStatus, setApplicationStatus] = useState(null); // For future: will come from backend
+  const [matchScore, setMatchScore] = useState(0); // For future: calculate based on user skills
   const [showToast, setShowToast] = useState(false);
+  const [relatedJobs, setRelatedJobs] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
-  const job = recommendedJobs.find((item) => item.id === parsedJobId);
-
-  if (!job) {
-    return (
-      <DashboardLayout>
-        <div className="dashboard">
-          <div className="dashboard__container">
-            <div className="dashboard__empty-state">This job is no longer available.</div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
+  // Fetch job details from backend
   useEffect(() => {
-    setApplicationStatus(getStoredApplicationStatus(parsedJobId));
-  }, [parsedJobId]);
+    async function fetchJob() {
+      try {
+        setLoading(true);
+        setError("");
+        
+        const jobData = await getJobDetails(jobId);
+        setJob(jobData);
+        
+        // TODO: Calculate match score based on user skills vs job skills
+        // For now, set a default value
+        if (isLoggedIn && user) {
+          setMatchScore(85); // Placeholder - will implement skill matching later
+        }
+        
+        // TODO: Fetch application status from backend when applications table is ready
+        
+      } catch (err) {
+        console.error("Failed to fetch job:", err);
+        setError(err.message || "Failed to load job details");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchJob();
+  }, [jobId, isLoggedIn, user]);
+
+  // Fetch related jobs (only for logged-in users)
+  useEffect(() => {
+    async function fetchRelatedJobs() {
+      if (!isLoggedIn || !job) return;
+      
+      try {
+        setLoadingRelated(true);
+        
+        // Fetch jobs from same category, excluding current job
+        const response = await getBrowseJobs({
+          limit: 4, // Get 4 jobs, we'll filter out current one
+        });
+        
+        // Filter out current job and limit to 3
+        const filtered = response.jobs
+          .filter(j => j.id !== job.id)
+          .slice(0, 3)
+          .map(transformJobForCard);
+        
+        setRelatedJobs(filtered);
+      } catch (err) {
+        console.error("Failed to fetch related jobs:", err);
+        // Don't show error, just leave related jobs empty
+      } finally {
+        setLoadingRelated(false);
+      }
+    }
+    
+    fetchRelatedJobs();
+  }, [job, isLoggedIn]);
 
   useEffect(() => {
     if (!showToast) return undefined;
@@ -87,38 +90,125 @@ export default function JobDetails() {
 
   const handleApply = () => {
     if (!isLoggedIn) {
-      navigate(`/login?redirect=/jobs/${job.id}`);
+      // Redirect to login with return URL
+      navigate(`/login?redirect=/jobs/${jobId}`);
       return;
     }
 
-    const nextStatus = "Under Review";
-    setApplicationStatus(nextStatus);
-    setStoredApplicationStatus(job.id, nextStatus);
+    // TODO: Implement application submission to backend
+    // For now, show toast
     setShowToast(true);
   };
 
+  // Helper to format date
+  const getPostedTime = (createdAt) => {
+    const createdDate = new Date(createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now - createdDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+    }
+    const months = Math.floor(diffDays / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  };
 
+  // Helper to get deadline days left
+  const getDeadlineDays = (deadline) => {
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    const diffTime = deadlineDate - now;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // Helper to transform job data for JobCard component
+  const transformJobForCard = (job) => {
+    const createdDate = new Date(job.created_at);
+    const now = new Date();
+    const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+    
+    let posted;
+    if (diffDays === 0) posted = "Today";
+    else if (diffDays === 1) posted = "1 day ago";
+    else if (diffDays < 7) posted = `${diffDays} days ago`;
+    else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      posted = weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+    } else {
+      const months = Math.floor(diffDays / 30);
+      posted = months === 1 ? "1 month ago" : `${months} months ago`;
+    }
+    
+    const hashCode = job.company_name.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    const hue = Math.abs(hashCode) % 360;
+    
+    return {
+      id: job.id,
+      company: job.company_name,
+      companyLogoUrl: job.company_logo_url,
+      logoColor: `linear-gradient(135deg, oklch(0.5 0.12 ${hue}), oklch(0.55 0.14 ${hue + 15}))`,
+      logoLetter: job.company_name.charAt(0).toUpperCase(),
+      title: job.job_title,
+      location: job.location,
+      type: job.employment_type,
+      salary: job.salary_per_month || "Negotiable",
+      salaryDetail: job.salary_per_month ? "per month" : "",
+      tags: job.skills.map(s => s.name),
+      posted: posted,
+    };
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="dashboard">
+          <div className="dashboard__container">
+            <div className="dashboard__empty-state">Loading job details...</div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <DashboardLayout>
+        <div className="dashboard">
+          <div className="dashboard__container">
+            <div className="dashboard__empty-state">
+              {error || "This job is no longer available."}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const deadlineDays = getDeadlineDays(job.deadline);
+  const postedTime = getPostedTime(job.created_at);
 
   const overviewSummary = [
-    { icon: "👥", label: "Openings", value: "3 openings" },
-    { icon: "📈", label: "Job Level", value: job.title.includes("Senior") ? "Senior" : job.title.includes("Manager") ? "Manager" : "Mid-Level" },
-    { icon: "🗂️", label: "Category", value: job.tags[0] || "Engineering" },
-    { icon: "🔄", label: "Job Shift", value: job.type },
-    { icon: "🏢", label: "Company", value: job.company },
-    { icon: "⏰", label: "Deadline", value: job.deadlineDaysLeft ? `${job.deadlineDaysLeft} days left` : "No deadline" },
+    { icon: "👥", label: "Openings", value: `${job.openings} opening${job.openings > 1 ? 's' : ''}` },
+    { icon: "📈", label: "Experience", value: `${job.experience_years} years` },
+    { icon: "🗂️", label: "Category", value: job.category },
+    { icon: "🔄", label: "Job Type", value: job.employment_type },
+    { icon: "🏢", label: "Company", value: job.company_name },
+    { icon: "⏰", label: "Deadline", value: deadlineDays ? `${deadlineDays} days left` : "Expired" },
   ];
-
-  const relatedJobs = recommendedJobs.filter((item) => item.id !== job.id).slice(0, 3);
- 
 
   return (
     <DashboardLayout>
       <div className="dashboard">
         <div className="dashboard__container">
           <section className="dashboard__page-header">
-            {/* <Link to="/recommended-jobs" className="dashboard__back-link">
-              ← Back to recommended jobs
-            </Link> */}
             <Link
                 className="dashboard__back-link"
                 onClick={() => navigate(-1)}
@@ -128,43 +218,36 @@ export default function JobDetails() {
             <div className="dashboard__detail-hero">
               <div className="dashboard__detail-summary">
                 <span className="dashboard__label">Job Details</span>
-                <div className="dashboard__job_name">{job.title}</div>
-                <p className="dashboard__subtitle">{job.company} • {job.location}</p>
+                <div className="dashboard__job_name">{job.job_title}</div>
+                <p className="dashboard__subtitle">{job.company_name} • {job.location}</p>
                 <div className="dashboard__detail-meta">
-                  <span>{job.type}</span>
-                  <span>{job.salary}</span>
-                  <span>Posted {job.posted}</span>
+                  <span>{job.employment_type}</span>
+                  <span>{job.salary_per_month || "Salary not disclosed"}</span>
+                  <span>Posted {postedTime}</span>
                 </div>
               </div>
               <div className="dashboard__detail-actions">
                 {isLoggedIn && (
                   <div className="dashboard__match-score">
-                    <div className="dashboard__match-score-ring" style={{ "--score-percent": `${job.matchScore}%` }}>
-                      <span>{job.matchScore}%</span>
+                    <div className="dashboard__match-score-ring" style={{ "--score-percent": `${matchScore}%` }}>
+                      <span>{matchScore}%</span>
                     </div>
                     <span className="dashboard__match-score-label">Match Score</span>
                   </div>
                 )}
-                {/* <button
-                  className={`dashboard__detail-btn${isLoggedIn && applicationStatus ? ` ${statusClassMap[applicationStatus] || "dashboard__detail-btn--applied"}` : ""}`}
-                  onClick={handleApply}
-                  disabled={Boolean(applicationStatus)}
-                >
-                  {applicationStatus ? applicationStatusLabels[applicationStatus] || applicationStatus : "Apply Now"}
-                </button> */}
                 <button
-  className={`dashboard__detail-btn ${
-    isLoggedIn && applicationStatus
-      ? statusClassMap[applicationStatus] || "dashboard__detail-btn--applied"
-      : ""
-  }`}
-  onClick={handleApply}
-  disabled={isLoggedIn && Boolean(applicationStatus)}
->
-  {!isLoggedIn
-    ? "Apply Now"
-    : applicationStatus || "Apply Now"}
-</button>
+                  className={`dashboard__detail-btn ${
+                    isLoggedIn && applicationStatus
+                      ? "dashboard__detail-btn--applied"
+                      : ""
+                  }`}
+                  onClick={handleApply}
+                  disabled={isLoggedIn && Boolean(applicationStatus)}
+                >
+                  {!isLoggedIn
+                    ? "Apply Now"
+                    : applicationStatus || "Apply Now"}
+                </button>
               </div>
             </div>
           </section>
@@ -190,22 +273,26 @@ export default function JobDetails() {
 
               <div className="dashboard__detail-card dashboard__detail-card--wide">
                 <h2>Job Description</h2>
-                <p>{job.description}</p>
+                <p>{job.job_description}</p>
               </div>
 
               <div className="dashboard__detail-card dashboard__detail-card--wide">
                 <h2>Job Specification</h2>
-                <p>{job.specification}</p>
+                <p>{job.job_specification}</p>
               </div>
 
               <div className="dashboard__detail-card">
                 <h2>Required Skills</h2>
                 <div className="dashboard__tag-list">
-                  {job.requiredSkills.map((skill) => (
-                    <span key={skill} className="dashboard__tag">
-                      {skill}
-                    </span>
-                  ))}
+                  {job.skills && job.skills.length > 0 ? (
+                    job.skills.map((skill) => (
+                      <span key={skill.id} className="dashboard__tag">
+                        {skill.name}
+                      </span>
+                    ))
+                  ) : (
+                    <p>No specific skills required</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -214,30 +301,47 @@ export default function JobDetails() {
               <div className="dashboard__detail-card dashboard__detail-card--sticky">
                 <h2>Company</h2>
                 <div className="dashboard__company-card">
-                  <div className="dashboard__company-logo" style={{ background: job.logoColor }}>
-                    {job.logoLetter}
-                  </div>
+                  {job.company_logo_url ? (
+                    <img 
+                      src={getFileUrl(job.company_logo_url)} 
+                      alt={`${job.company_name} logo`}
+                      className="dashboard__company-logo"
+                      style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
+                    />
+                  ) : (
+                    <div className="dashboard__company-logo" style={{ 
+                      background: `linear-gradient(135deg, oklch(0.5 0.12 ${Math.abs(job.company_name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0)) % 360}), oklch(0.55 0.14 ${(Math.abs(job.company_name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0)) % 360) + 15}))` 
+                    }}>
+                      {job.company_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
-                    <h3>{job.company}</h3>
-                    <p>{job.companyDescription}</p>
+                    <h3>{job.company_name}</h3>
+                    <p>{job.company_description || "A leading company in the industry."}</p>
                   </div>
                 </div>
               </div>
             </aside>
           </div>
 
-          <section className="dashboard__detail-related">
-            <div className="dashboard__section-header">
-              <h2 className="dashboard__section-title">Jobs You May Like</h2>
-            </div>
-            <div className="dashboard__jobs-grid">
-              {relatedJobs.map((jobItem) => (
-                <JobCard key={jobItem.id} job={jobItem} href={`/jobs/${jobItem.id}`} showMatchBadge={false} />
-              ))}
-            </div>
-          </section>
+          {isLoggedIn && relatedJobs.length > 0 && (
+            <section className="dashboard__detail-related">
+              <div className="dashboard__section-header">
+                <h2 className="dashboard__section-title">Jobs You May Like</h2>
+              </div>
+              {loadingRelated ? (
+                <div className="dashboard__empty-state">Loading related jobs...</div>
+              ) : (
+                <div className="dashboard__jobs-grid">
+                  {relatedJobs.map((jobItem) => (
+                    <JobCard key={jobItem.id} job={jobItem} href={`/jobs/${jobItem.id}`} showMatchBadge={false} />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
-          {showToast && <div className="dashboard__toast">Application submitted successfully!</div>}
+          {showToast && <div className="dashboard__toast">Application will be submitted soon!</div>}
         </div>
       </div>
     </DashboardLayout>

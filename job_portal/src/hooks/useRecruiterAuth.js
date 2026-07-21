@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getAccessToken, logoutUser } from '../services/auth';
+import { getAccessToken, logoutUser, getStoredUser } from '../services/auth';
 import axios from 'axios';
 import { API_BASE_URL } from '../services/api';
 
 /**
  * Hook to verify if recruiter is authenticated with valid token
  * Redirects to recruiter login if not authenticated or token is invalid
+ * Also checks that the user has "recruiter" role
  * Re-checks on every route change to catch token invalidation
  * 
  * @returns {Object} - { isAuthenticated, isLoading }
@@ -41,7 +42,18 @@ export function useRecruiterAuth() {
           return;
         }
 
-        // Verify token with backend (recruiters endpoint)
+        // Check role from stored user data
+        const storedUser = getStoredUser();
+        if (storedUser && storedUser.role === 'candidate') {
+          console.log('[useRecruiterAuth] Candidate trying to access recruiter page, redirecting to dashboard');
+          if (!redirected) {
+            redirected = true;
+            window.location.href = '/dashboard';
+          }
+          return;
+        }
+
+        // Verify token with backend (recruiters endpoint for recruiters only)
         console.log('[useRecruiterAuth] Verifying token with backend...');
         const response = await axios.get(`${API_BASE_URL}/recruiters/me/profile`, {
           headers: {

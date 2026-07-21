@@ -5,6 +5,7 @@ import SkillSelector from "../../components/SkillSelector";
 import { useUser } from "../../context/UserContext";
 import { formatDate, getDisplayName, calculateProfileCompletionFromBackend } from "../../utils/profile";
 import { getUserProfile, updateUserProfile } from "../../services/profile";
+import { fetchSkills } from "../../services/skills";
 import { getFileUrl } from "../../services/api";
 import "../../styles/Profile.css";
 
@@ -37,6 +38,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [profileData, setProfileData] = useState(null);
+  const [availableSkills, setAvailableSkills] = useState([]);
   const [localProfileCompletion, setLocalProfileCompletion] = useState(0);
   const [form, setForm] = useState({
     fullName: "",
@@ -60,6 +62,20 @@ export default function Profile() {
 
   const displayName = getDisplayName(user);
   const initial = displayName.charAt(0).toUpperCase();
+
+  // Fetch available skills on mount
+  useEffect(() => {
+    async function loadSkills() {
+      try {
+        const skills = await fetchSkills();
+        setAvailableSkills(skills);
+      } catch (err) {
+        console.error("Failed to fetch skills:", err);
+      }
+    }
+    
+    loadSkills();
+  }, []);
 
   // Fetch profile data on mount
   useEffect(() => {
@@ -537,6 +553,7 @@ export default function Profile() {
                   <label>Skills</label>
                   <div className="profile-form__skills">
                     <SkillSelector
+                      availableSkills={availableSkills}
                       selectedSkills={selectedSkills}
                       onChange={setSelectedSkills}
                     />

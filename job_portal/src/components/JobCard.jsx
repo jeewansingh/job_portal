@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
+import { getFileUrl } from "../services/api";
 import "../styles/TopJobs.css";
 
 export default function JobCard({ job, href, showMatchBadge = true }) {
+  // Limit tags to 10
+  const displayTags = job.tags?.slice(0, 8) || [];
+  
   const cardContent = (
     <article className="job-card">
       {showMatchBadge && job.matchScore !== undefined && (
@@ -9,8 +13,16 @@ export default function JobCard({ job, href, showMatchBadge = true }) {
       )}
 
       <div className="job-card__header">
-        <div className="job-card__logo" style={{ background: job.logoColor }}>
-          {job.logoLetter}
+        <div className="job-card__logo" style={{ background: job.companyLogoUrl ? 'transparent' : job.logoColor }}>
+          {job.companyLogoUrl ? (
+            <img 
+              src={getFileUrl(job.companyLogoUrl)} 
+              alt={`${job.company} logo`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
+            />
+          ) : (
+            job.logoLetter
+          )}
         </div>
         <div className="job-card__meta">
           <p className="job-card__company">{job.company}</p>
@@ -24,8 +36,8 @@ export default function JobCard({ job, href, showMatchBadge = true }) {
       </div>
 
       <div className="job-card__tags">
-        {job.tags.map((tag) => (
-          <span key={tag} className="job-card__tag">
+        {displayTags.map((tag, index) => (
+          <span key={`${tag}-${index}`} className="job-card__tag">
             {tag}
           </span>
         ))}
