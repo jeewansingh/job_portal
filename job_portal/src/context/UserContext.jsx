@@ -10,14 +10,32 @@ export function UserProvider({ children }) {
   const loadUserFromStorage = () => {
     const storedUser = getStoredUser();
     if (storedUser) {
-      return {
-        id: storedUser.id,
-        fullName: storedUser.full_name,
-        email: storedUser.email,
-        profilePictureUrl: getFileUrl(storedUser.profile_picture_url), // Convert to full URL
-        isLoggedIn: true,
-        role: "candidate",
-      };
+      // Determine role from stored data
+      const role = storedUser.role || "candidate";
+      
+      if (role === "recruiter") {
+        // Load recruiter data
+        return {
+          id: storedUser.id,
+          fullName: storedUser.full_name,
+          email: storedUser.email,
+          companyName: storedUser.company_name,
+          companyLogoUrl: getFileUrl(storedUser.company_logo_url),
+          isLoggedIn: true,
+          role: "recruiter",
+        };
+      } else {
+        // Load candidate data
+        return {
+          id: storedUser.id,
+          fullName: storedUser.full_name,
+          email: storedUser.email,
+          profilePictureUrl: getFileUrl(storedUser.profile_picture_url),
+          preferredJobType: storedUser.preferred_job_type,
+          isLoggedIn: true,
+          role: "candidate",
+        };
+      }
     }
     return null;
   };

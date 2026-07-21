@@ -21,6 +21,7 @@ import Industries from "./pages/public/Industries";
 import IndustryJobs from "./pages/public/IndustryJobs";
 import JobDetails from "./pages/public/JobDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRecruiterRoute from "./components/ProtectedRecruiterRoute";
 
 import "./App.css";
 
@@ -118,63 +119,63 @@ function App() {
         <Route
           path="/recruiter/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <RecruiterDashboard />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 
         <Route
           path="/recruiter/post-job"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <PostJob />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 
         <Route
           path="/recruiter/manage-jobs"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <ManageJobs />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 
         <Route
           path="/recruiter/applications"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <RecruiterApplications />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 
         <Route
           path="/recruiter/profile"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <RecruiterProfile />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 
         <Route
           path="/recruiter/jobs/:jobId"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <RecruiterJobDetail />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 
         <Route
           path="/recruiter/applicants/:applicantId"
           element={
-            <ProtectedRoute allowedRoles={["recruiter"]}>
+            <ProtectedRecruiterRoute>
               <RecruiterApplicantProfile />
-            </ProtectedRoute>
+            </ProtectedRecruiterRoute>
           }
         />
 

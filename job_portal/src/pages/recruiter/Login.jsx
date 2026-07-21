@@ -3,16 +3,19 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useUser } from "../../context/UserContext";
+import { loginUser } from "../../services/auth";
 import "../../styles/Auth.css";
 
 export default function RecruiterLogin() {
-  const { login, isLoggedIn, user } = useUser();
+  const { isLoggedIn, user, refreshUser } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -23,27 +26,44 @@ export default function RecruiterLogin() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user types
+    if (error) setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const payload = {
-      email: form.email.trim(),
-      password: form.password,
-    };
+    try {
+      const payload = {
+        email: form.email.trim(),
+        password: form.password,
+      };
 
-    console.log("Recruiter login payload (ready to send):", payload);
-    console.log("Recruiter login JSON:", JSON.stringify(payload));
+      // Call backend login API
+      const response = await loginUser(payload.email, payload.password);
 
-    login(payload.email, "recruiter");
+      // Check if the logged-in user is a recruiter
+      if (response.user.role !== "recruiter") {
+        setError("This login is for recruiters only. Please use the candidate login page.");
+        setLoading(false);
+        return;
+      }
 
-    const params = new URLSearchParams(location.search);
-    const redirectTo = params.get("redirect");
-    const safeRedirect =
-      redirectTo && redirectTo.startsWith("/recruiter/") ? redirectTo : "/recruiter/dashboard";
-
-    navigate(safeRedirect);
+      // Refresh UserContext to load user from localStorage
+      refreshUser();
+      
+      // Small delay to ensure UserContext is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate to recruiter dashboard
+      navigate("/recruiter/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,6 +84,12 @@ export default function RecruiterLogin() {
               Sign in to manage open roles, review applicants, and keep hiring moving.
             </p>
 
+            {error && (
+              <div className="auth-card__error">
+                {error}
+              </div>
+            )}
+
             <div className="auth-field">
               <label htmlFor="email">
                 Work Email <span className="auth-required">*</span>
@@ -77,6 +103,7 @@ export default function RecruiterLogin() {
                 placeholder="name@company.com"
                 autoComplete="email"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -93,11 +120,12 @@ export default function RecruiterLogin() {
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 required
+                disabled={loading}
               />
             </div>
 
-            <button type="submit" className="auth-card__btn">
-              Sign In as Recruiter
+            <button type="submit" className="auth-card__btn" disabled={loading}>
+              {loading ? "Signing In..." : "Sign In as Recruiter"}
             </button>
 
             <p className="auth-card__footer">

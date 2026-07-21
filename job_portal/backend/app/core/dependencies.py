@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_access_token
 from app.repositories.user_repository import UserRepository
+from app.repositories.recruiter_repository import get_recruiter_by_id
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
@@ -50,12 +51,46 @@ def get_current_user_id(
     return user_id
 
 
+def get_current_user_role(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> str:
+    """
+    Extract role from JWT token.
+    
+    Args:
+        credentials: HTTP Authorization credentials with Bearer token
+        
+    Returns:
+        Role from token ("candidate" or "recruiter")
+        
+    Raises:
+        HTTPException: If token is invalid
+    """
+    token = credentials.credentials
+    
+    # Verify and decode token
+    payload = verify_access_token(token)
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Extract role from payload (default to "candidate" for backward compatibility)
+    role: str = payload.get("role", "candidate")
+    
+    return role
+
+
 def get_current_user(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id)
 ):
     """
     Get current user from database using token.
+    Only for candidates (users table).
     
     Args:
         db: Database session
@@ -82,3 +117,38 @@ def get_current_user(
         )
     
     return user
+
+
+def get_current_recruiter(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Get current recruiter from database using token.
+    Only for recruiters (recruiters table).
+    
+    Args:
+        db: Database session
+        user_id: Recruiter ID from token
+        
+    Returns:
+        Recruiter object
+        
+    Raises:
+        HTTPException: If recruiter not found or inactive
+    """
+    recruiter = get_recruiter_by_id(db, user_id)
+    
+    if not recruiter:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recruiter not found"
+        )
+    
+    if not recruiter.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Recruiter account is disabled"
+        )
+    
+    return recruiter

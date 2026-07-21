@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useUser } from "../../context/UserContext";
+import { registerRecruiter } from "../../services/recruiter";
+import { loginUser } from "../../services/auth";
 import "../../styles/Auth.css";
 
 const INDUSTRY_OPTIONS = [
@@ -38,15 +40,6 @@ const initialForm = {
   agreeToTerms: false,
 };
 
-function fileMeta(file) {
-  if (!file) return null;
-  return {
-    name: file.name,
-    size: file.size,
-    type: file.type,
-  };
-}
-
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -57,7 +50,7 @@ function readFileAsDataURL(file) {
 }
 
 export default function RecruiterRegister() {
-  const { register } = useUser();
+  const { refreshUser } = useUser();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [companyLogo, setCompanyLogo] = useState(null);
@@ -92,41 +85,6 @@ export default function RecruiterRegister() {
     setCompanyLogoPreview("");
   };
 
-  const buildPayload = () => ({
-    fullName: form.fullName.trim(),
-    workEmail: form.workEmail.trim(),
-    password: form.password,
-    companyName: form.companyName.trim(),
-    industry: form.industry,
-    website: form.website.trim(),
-    country: form.country.trim(),
-    city: form.city.trim(),
-    workPhoneNumber: form.workPhoneNumber.trim(),
-    companyDescription: form.companyDescription.trim(),
-    agreeToTerms: form.agreeToTerms,
-    companyLogo: fileMeta(companyLogo),
-  });
-
-  const buildFormData = (payload) => {
-    const formData = new FormData();
-
-    formData.append("fullName", payload.fullName);
-    formData.append("workEmail", payload.workEmail);
-    formData.append("password", payload.password);
-    formData.append("companyName", payload.companyName);
-    formData.append("industry", payload.industry);
-    formData.append("website", payload.website);
-    formData.append("country", payload.country);
-    formData.append("city", payload.city);
-    formData.append("workPhoneNumber", payload.workPhoneNumber);
-    formData.append("companyDescription", payload.companyDescription);
-    formData.append("agreeToTerms", String(payload.agreeToTerms));
-
-    if (companyLogo) formData.append("companyLogo", companyLogo);
-
-    return formData;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -140,26 +98,49 @@ export default function RecruiterRegister() {
       return;
     }
 
-    const payload = buildPayload();
-    const companyLogoUrl = companyLogo ? await readFileAsDataURL(companyLogo) : "";
+    try {
+      // Build FormData for backend
+      const formData = new FormData();
+      formData.append("full_name", form.fullName.trim());
+      formData.append("work_email", form.workEmail.trim());
+      formData.append("password", form.password);
+      formData.append("company_name", form.companyName.trim());
+      formData.append("industry", form.industry);
+      formData.append("work_phone", form.workPhoneNumber.trim());
+      formData.append("country", form.country.trim());
+      formData.append("city", form.city.trim());
+      
+      // Optional fields
+      if (form.website.trim()) {
+        formData.append("website", form.website.trim());
+      }
+      if (form.companyDescription.trim()) {
+        formData.append("company_description", form.companyDescription.trim());
+      }
+      if (companyLogo) {
+        formData.append("company_logo", companyLogo);
+      }
 
-    const recruiterProfile = {
-      ...payload,
-      companyLogoUrl,
-      email: payload.workEmail,
-    };
+      // Call backend API to register
+      const response = await registerRecruiter(formData);
+      
+      console.log("Recruiter registered successfully:", response);
 
-    console.log("Recruiter register payload (ready to send):", recruiterProfile);
-    console.log("Recruiter register JSON:", JSON.stringify(recruiterProfile, null, 2));
+      // Now log them in automatically to get the token
+      const loginResponse = await loginUser(form.workEmail.trim(), form.password);
+      
+      // Refresh UserContext to load user from localStorage
+      refreshUser();
+      
+      // Small delay to ensure UserContext is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-    const formData = buildFormData(payload);
-    console.log("Recruiter register FormData entries (for multipart upload):");
-    for (const [key, value] of formData.entries()) {
-      console.log(`  ${key}:`, value);
+      // Navigate to recruiter dashboard
+      navigate("/recruiter/dashboard");
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert(error.message || "Registration failed. Please try again.");
     }
-
-    register(recruiterProfile, "recruiter");
-    navigate("/recruiter/dashboard");
   };
 
   return (

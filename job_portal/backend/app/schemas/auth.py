@@ -15,8 +15,11 @@ class UserBasicInfo(BaseModel):
     id: int
     full_name: str
     email: str
+    role: str  # "candidate" or "recruiter"
     profile_picture_url: Optional[str] = None
     preferred_job_type: Optional[str] = None
+    company_name: Optional[str] = None  # For recruiters
+    company_logo_url: Optional[str] = None  # For recruiters
     
     class Config:
         from_attributes = True

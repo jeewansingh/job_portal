@@ -12,6 +12,7 @@ from typing import Optional
 UPLOAD_DIR = Path("uploads")
 RESUME_DIR = UPLOAD_DIR / "resumes"
 PROFILE_PICTURE_DIR = UPLOAD_DIR / "profile_pictures"
+COMPANY_LOGO_DIR = UPLOAD_DIR / "company_logos"
 
 # File size limits (in bytes)
 MAX_RESUME_SIZE = 10 * 1024 * 1024  # 10MB
@@ -30,6 +31,7 @@ def ensure_upload_directories():
     """Create upload directories if they don't exist."""
     RESUME_DIR.mkdir(parents=True, exist_ok=True)
     PROFILE_PICTURE_DIR.mkdir(parents=True, exist_ok=True)
+    COMPANY_LOGO_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ============================================================
@@ -164,3 +166,54 @@ def delete_file(file_path: str) -> bool:
             return False
     
     return False
+
+
+async def save_file(
+    file: Optional[UploadFile],
+    allowed_types: set,
+    max_size_mb: int,
+    upload_dir: str
+) -> Optional[str]:
+    """
+    Generic function to validate and save any type of file.
+    
+    Args:
+        file: The uploaded file
+        allowed_types: Set of allowed content types (e.g., {"image/jpeg", "image/png"})
+        max_size_mb: Maximum file size in megabytes
+        upload_dir: Directory path where file should be saved (e.g., "uploads/company_logos")
+        
+    Returns:
+        The relative file path as a string, or None if no file provided
+        
+    Raises:
+        HTTPException: If validation fails
+    """
+    if not file:
+        return None
+    
+    # Validate file type
+    validate_file_type(file, allowed_types)
+    
+    # Read file content
+    file_content = await file.read()
+    
+    # Validate file size
+    max_size_bytes = max_size_mb * 1024 * 1024
+    validate_file_size(file_content, max_size_bytes, "File")
+    
+    # Ensure directory exists
+    dir_path = Path(upload_dir)
+    dir_path.mkdir(parents=True, exist_ok=True)
+    
+    # Generate unique filename
+    extension = Path(file.filename).suffix
+    filename = f"{uuid.uuid4()}{extension}"
+    file_path = dir_path / filename
+    
+    # Save file
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+    
+    # Return relative path
+    return str(file_path)
