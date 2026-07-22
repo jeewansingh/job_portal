@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import { getJobDetails, getBrowseJobs } from "../../services/job";
+import { getJobDetails, getSimilarJobs } from "../../services/job";
 import { getFileUrl } from "../../services/api";
 import DashboardLayout from "../../components/DashboardLayout";
 import JobCard from "../../components/JobCard";
@@ -31,10 +31,11 @@ export default function JobDetails() {
         const jobData = await getJobDetails(jobId);
         setJob(jobData);
         
-        // TODO: Calculate match score based on user skills vs job skills
-        // For now, set a default value
-        if (isLoggedIn && user) {
-          setMatchScore(85); // Placeholder - will implement skill matching later
+        // Use match_score from backend if user is logged in
+        if (isLoggedIn && user && jobData.match_score !== null && jobData.match_score !== undefined) {
+          setMatchScore(jobData.match_score);
+        } else {
+          setMatchScore(0); // Default when not logged in
         }
         
         // TODO: Fetch application status from backend when applications table is ready
@@ -53,25 +54,20 @@ export default function JobDetails() {
   // Fetch related jobs (only for logged-in users)
   useEffect(() => {
     async function fetchRelatedJobs() {
-      if (!isLoggedIn || !job) return;
+      if (!job) return;
       
       try {
         setLoadingRelated(true);
         
-        // Fetch jobs from same category, excluding current job
-        const response = await getBrowseJobs({
-          limit: 4, // Get 4 jobs, we'll filter out current one
-        });
+        // Use new KNN-based similar jobs endpoint
+        const response = await getSimilarJobs(jobId, 3);
         
-        // Filter out current job and limit to 3
-        const filtered = response.jobs
-          .filter(j => j.id !== job.id)
-          .slice(0, 3)
-          .map(transformJobForCard);
+        // Transform jobs for JobCard component
+        const transformed = response.jobs.map(transformJobForCard);
         
-        setRelatedJobs(filtered);
+        setRelatedJobs(transformed);
       } catch (err) {
-        console.error("Failed to fetch related jobs:", err);
+        console.error("Failed to fetch similar jobs:", err);
         // Don't show error, just leave related jobs empty
       } finally {
         setLoadingRelated(false);
@@ -79,7 +75,7 @@ export default function JobDetails() {
     }
     
     fetchRelatedJobs();
-  }, [job, isLoggedIn]);
+  }, [job, jobId]);
 
   useEffect(() => {
     if (!showToast) return undefined;
@@ -324,13 +320,13 @@ export default function JobDetails() {
             </aside>
           </div>
 
-          {isLoggedIn && relatedJobs.length > 0 && (
+          {relatedJobs.length > 0 && (
             <section className="dashboard__detail-related">
               <div className="dashboard__section-header">
                 <h2 className="dashboard__section-title">Jobs You May Like</h2>
               </div>
               {loadingRelated ? (
-                <div className="dashboard__empty-state">Loading related jobs...</div>
+                <div className="dashboard__empty-state">Loading similar jobs...</div>
               ) : (
                 <div className="dashboard__jobs-grid">
                   {relatedJobs.map((jobItem) => (

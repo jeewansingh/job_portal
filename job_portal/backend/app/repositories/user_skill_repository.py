@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.user_skill import UserSkill
+from app.models.skill import Skill
 
 
 class UserSkillRepository:
@@ -24,6 +25,25 @@ class UserSkillRepository:
             db.query(Skill)
             .filter(Skill.id == skill_id)
             .first()
+        )
+
+    @staticmethod
+    def get_user_skills(db: Session, user_id: int):
+        """
+        Get all skills for a user by joining UserSkill and Skill tables.
+        
+        Args:
+            db: Database session
+            user_id: ID of the user
+        
+        Returns:
+            List of Skill objects that the user has
+        """
+        return (
+            db.query(Skill)
+            .join(UserSkill, Skill.id == UserSkill.skill_id)
+            .filter(UserSkill.user_id == user_id)
+            .all()
         )
 
     @staticmethod

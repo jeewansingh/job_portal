@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import JobCard from "../../components/JobCard";
 import { getBrowseJobs } from "../../services/job";
@@ -8,32 +8,42 @@ import "../../styles/BrowseJobs.css";
 const PAGE_SIZE = 12;
 
 export default function BrowseJobs() {
-  const [titleQuery, setTitleQuery] = useState("");
-  const [companyQuery, setCompanyQuery] = useState("");
-  const [jobType, setJobType] = useState("All");
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [jobs, setJobs] = useState([]);
   const [totalJobs, setTotalJobs] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Active filter values (applied when user presses Enter)
-  const [activeTitle, setActiveTitle] = useState("");
-  const [activeCompany, setActiveCompany] = useState("");
+  // Read state from URL (source of truth)
+  const urlPage = parseInt(searchParams.get("page")) || 1;
+  const urlTitle = searchParams.get("title") || "";
+  const urlCompany = searchParams.get("company") || "";
+  const urlType = searchParams.get("type") || "All";
+  
+  // Local input states (what user is typing)
+  const [titleQuery, setTitleQuery] = useState(urlTitle);
+  const [companyQuery, setCompanyQuery] = useState(urlCompany);
+  
+  // Sync local input with URL when URL changes (e.g., back button)
+  useEffect(() => {
+    setTitleQuery(urlTitle);
+    setCompanyQuery(urlCompany);
+  }, [urlTitle, urlCompany]);
 
-  // Fetch jobs from backend when filters or page changes
+  // Fetch jobs from backend when URL params change
   useEffect(() => {
     async function fetchJobs() {
       try {
         setLoading(true);
         setError("");
         
-        const skip = (page - 1) * PAGE_SIZE;
+        const skip = (urlPage - 1) * PAGE_SIZE;
         
         const response = await getBrowseJobs({
-          title: activeTitle.trim() || undefined,
-          company: activeCompany.trim() || undefined,
-          employment_type: jobType !== "All" ? jobType : undefined,
+          title: urlTitle.trim() || undefined,
+          company: urlCompany.trim() || undefined,
+          employment_type: urlType !== "All" ? urlType : undefined,
           skip: skip,
           limit: PAGE_SIZE,
         });
@@ -49,7 +59,7 @@ export default function BrowseJobs() {
     }
     
     fetchJobs();
-  }, [activeTitle, activeCompany, jobType, page]);
+  }, [urlTitle, urlCompany, urlType, urlPage]);
 
   // Get unique job types from fetched jobs
   const jobTypes = useMemo(() => {
@@ -57,31 +67,61 @@ export default function BrowseJobs() {
     return types;
   }, [jobs]);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [activeTitle, activeCompany, jobType]);
+  // Update URL params function
+  const updateFilters = (newParams) => {
+    const params = { ...Object.fromEntries(searchParams) };
+    
+    // Update params
+    Object.keys(newParams).forEach(key => {
+      if (newParams[key] && newParams[key] !== "All") {
+        params[key] = newParams[key];
+      } else {
+        delete params[key];
+      }
+    });
+    
+    // Reset to page 1 when filters change (but not when just changing page)
+    if (!newParams.page && (newParams.title !== undefined || newParams.company !== undefined || newParams.type !== undefined)) {
+      delete params.page;
+    }
+    
+    setSearchParams(params);
+  };
 
   // Handle Enter key press on filter inputs
   const handleTitleKeyPress = (event) => {
     if (event.key === "Enter") {
-      setActiveTitle(titleQuery);
+      updateFilters({ title: titleQuery });
     }
   };
 
   const handleCompanyKeyPress = (event) => {
     if (event.key === "Enter") {
-      setActiveCompany(companyQuery);
+      updateFilters({ company: companyQuery });
     }
   };
 
   // Handle blur (clicking outside) on filter inputs
   const handleTitleBlur = () => {
-    setActiveTitle(titleQuery);
+    if (titleQuery !== urlTitle) {
+      updateFilters({ title: titleQuery });
+    }
   };
 
   const handleCompanyBlur = () => {
-    setActiveCompany(companyQuery);
+    if (companyQuery !== urlCompany) {
+      updateFilters({ company: companyQuery });
+    }
+  };
+
+  // Handle job type change
+  const handleJobTypeChange = (event) => {
+    updateFilters({ type: event.target.value });
+  };
+
+  // Handle page change
+  const goToPage = (newPage) => {
+    updateFilters({ page: newPage > 1 ? newPage.toString() : undefined });
   };
 
   // Helper function to convert backend job data to frontend format
@@ -204,7 +244,7 @@ export default function BrowseJobs() {
               onKeyPress={handleCompanyKeyPress}
               onBlur={handleCompanyBlur}
             />
-            <select className="browse-jobs-page__filter-select" value={jobType} onChange={(event) => setJobType(event.target.value)}>
+            <select className="browse-jobs-page__filter-select" value={urlType} onChange={handleJobTypeChange}>
               {jobTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
@@ -231,18 +271,18 @@ export default function BrowseJobs() {
           <div className="browse-jobs-page__pagination">
             <button 
               className="browse-jobs-page__pagination-btn" 
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))} 
-              disabled={page === 1 || loading}
+              onClick={() => goToPage(Math.max(1, urlPage - 1))} 
+              disabled={urlPage === 1 || loading}
             >
               Previous
             </button>
             <span className="browse-jobs-page__pagination-status">
-              Page {page} of {totalPages}
+              Page {urlPage} of {totalPages}
             </span>
             <button 
               className="browse-jobs-page__pagination-btn" 
-              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} 
-              disabled={page >= totalPages || loading}
+              onClick={() => goToPage(Math.min(totalPages, urlPage + 1))} 
+              disabled={urlPage >= totalPages || loading}
             >
               Next
             </button>

@@ -5,7 +5,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import JobCard from "../../components/JobCard";
 import ProfileCompletionRing from "../../components/ProfileCompletionRing";
 
-import { getRecommendedJobs } from "../../services/jobs";
+import { getRecommendedJobs } from "../../services/job"; // Changed from jobs.js to job.js
 import { getRecentApplications } from "../../services/applications";
 import { getUserProfile } from "../../services/profile";
 
@@ -30,14 +30,61 @@ export default function Dashboard() {
   const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [recentApplications, setRecentApplications] = useState([]);
   const [realProfileCompletion, setRealProfileCompletion] = useState(profileCompletion);
+  const [loadingJobs, setLoadingJobs] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const jobs = await getRecommendedJobs();
-        const applications = await getRecentApplications();
+        // Fetch recommended jobs from backend API (limit to 6 for dashboard)
+        setLoadingJobs(true);
+        const jobsResponse = await getRecommendedJobs({ skip: 0, limit: 6 });
+        
+        // Transform backend data to frontend format
+        const transformedJobs = jobsResponse.jobs.map(job => {
+          const createdDate = new Date(job.created_at);
+          const now = new Date();
+          const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+          
+          let posted;
+          if (diffDays === 0) posted = "Today";
+          else if (diffDays === 1) posted = "1 day ago";
+          else if (diffDays < 7) posted = `${diffDays} days ago`;
+          else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            posted = weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+          } else {
+            const months = Math.floor(diffDays / 30);
+            posted = months === 1 ? "1 month ago" : `${months} months ago`;
+          }
+          
+          // Generate color based on company name
+          const hashCode = job.company_name.split('').reduce((acc, char) => {
+            return char.charCodeAt(0) + ((acc << 5) - acc);
+          }, 0);
+          const hue = Math.abs(hashCode) % 360;
+          
+          return {
+            id: job.id,
+            company: job.company_name,
+            companyLogoUrl: job.company_logo_url,
+            logoColor: `linear-gradient(135deg, oklch(0.5 0.12 ${hue}), oklch(0.55 0.14 ${hue + 15}))`,
+            logoLetter: job.company_name.charAt(0).toUpperCase(),
+            title: job.job_title,
+            location: job.location,
+            type: job.employment_type,
+            salary: job.salary_per_month || "Negotiable",
+            salaryDetail: job.salary_per_month ? "per month" : "",
+            tags: job.skills.map(s => s.name),
+            posted: posted,
+            matchScore: Math.round(job.match_score),
+          };
+        });
+        
+        setRecommendedJobs(transformedJobs);
+        setLoadingJobs(false);
 
-        setRecommendedJobs(jobs);
+        // Fetch recent applications
+        const applications = await getRecentApplications();
         setRecentApplications(applications);
 
         // Load profile completion from backend (no user ID needed)
@@ -52,6 +99,7 @@ export default function Dashboard() {
         }
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
+        setLoadingJobs(false);
       }
     }
 
@@ -122,15 +170,24 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="dashboard__jobs-grid">
-              {topJobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  href={`/jobs/${job.id}`}
-                />
-              ))}
-            </div>
+            {loadingJobs ? (
+              <div className="dashboard__empty-state">Loading recommended jobs...</div>
+            ) : topJobs.length > 0 ? (
+              <div className="dashboard__jobs-grid">
+                {topJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    href={`/jobs/${job.id}`}
+                    showMatchBadge={true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="dashboard__empty-state">
+                No recommended jobs available. Complete your profile to get personalized recommendations!
+              </div>
+            )}
           </section>
 
           <section className="dashboard__section">

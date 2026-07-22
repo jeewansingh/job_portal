@@ -59,6 +59,8 @@ class JobDetailsResponse(BaseModel):
     company_description: Optional[str] = None
     # Skills
     skills: List[SkillInfo] = []
+    # Match score (only if user is logged in)
+    match_score: Optional[float] = None
 
 
 class JobListItem(BaseModel):
@@ -118,3 +120,67 @@ class BrowseJobsResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+class RecommendedJobItem(BaseModel):
+    """Schema for recommended job with match score"""
+    id: int
+    job_title: str
+    category: str
+    employment_type: str
+    experience_years: Decimal
+    salary_per_month: Optional[str] = None
+    location: str
+    job_description: str
+    job_specification: str
+    deadline: date
+    created_at: datetime
+    is_closed: bool
+    is_active: bool
+    # Company info
+    company_name: str
+    company_logo_url: Optional[str] = None
+    # Skills
+    skills: List[SkillInfo] = []
+    # Recommendation specific fields
+    match_score: float
+    matched_skills: List[str] = []
+    score_breakdown: Optional[dict] = None
+
+
+class RecommendedJobsResponse(BaseModel):
+    """Schema for recommended jobs paginated response"""
+    jobs: List[RecommendedJobItem]
+    total: int
+    skip: int
+    limit: int
+
+
+class SimilarJobItem(BaseModel):
+    """Schema for similar job (KNN-based)"""
+    id: int
+    job_title: str
+    category: str
+    employment_type: str
+    experience_years: Decimal
+    salary_per_month: Optional[str] = None
+    location: str
+    job_description: str
+    job_specification: str
+    deadline: date
+    created_at: datetime
+    is_closed: bool
+    is_active: bool
+    # Company info
+    company_name: str
+    company_logo_url: Optional[str] = None
+    # Skills
+    skills: List[SkillInfo] = []
+    # Similarity score
+    match_score: float
+
+
+class SimilarJobsResponse(BaseModel):
+    """Schema for similar jobs response"""
+    jobs: List[SimilarJobItem]
+    total: int

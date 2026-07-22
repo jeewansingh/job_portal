@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Form, Query
+from fastapi import APIRouter, Depends, Form, Query, Header
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_id, get_current_recruiter
-from app.schemas.job import JobResponse, JobListItem, BrowseJobItem, BrowseJobsResponse, JobDetailsResponse
+from app.core.security import verify_access_token
+from app.schemas.job import JobResponse, JobListItem, BrowseJobItem, BrowseJobsResponse, JobDetailsResponse, RecommendedJobsResponse, SimilarJobsResponse
 from app.services.job_service import (
     post_job,
     get_recruiter_jobs,
@@ -14,6 +15,8 @@ from app.services.job_service import (
     delete_job_posting,
     browse_all_jobs
 )
+from app.services.recommendation_service import get_recommended_jobs
+from app.services.similar_jobs_service import get_similar_jobs
 
 router = APIRouter(
     prefix="/jobs",
@@ -48,6 +51,37 @@ async def browse_jobs(
         title=title,
         company=company,
         employment_type=employment_type,
+        skip=skip,
+        limit=limit
+    )
+
+
+@router.get(
+    "/recommended",
+    response_model=RecommendedJobsResponse
+)
+async def get_recommended_jobs_for_user(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Maximum number of records to return"),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """
+    Get recommended jobs for the logged-in user (Protected endpoint).
+    
+    - Requires authentication (user must be logged in)
+    - Calculates match score based on:
+      * Skills match (60% weight) - TF-IDF + Cosine Similarity
+      * Position/Title match (20% weight) - TF-IDF + Cosine Similarity
+      * Experience match (15% weight) - Ratio comparison
+      * Job type preference (5% weight) - Exact match
+    - Returns jobs sorted by match score (highest first)
+    - Includes match_score and matched_skills for each job
+    - Supports pagination
+    """
+    return await get_recommended_jobs(
+        db=db,
+        user_id=current_user_id,
         skip=skip,
         limit=limit
     )
@@ -119,10 +153,64 @@ async def get_my_jobs(
 )
 async def get_job(
     job_id: int,
+    db: Session = Depends(get_db),
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Get job details by ID with company info and skills.
+    
+    - Public endpoint (no authentication required)
+    - If Authorization header is provided and valid, includes match_score
+    - If no auth or invalid auth, match_score will be null
+    """
+    user_id = None
+    
+    # Try to extract user_id from token if provided
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.replace("Bearer ", "")
+            payload = verify_access_token(token)
+            if payload:
+                user_id = payload.get("user_id")
+        except:
+            # Invalid token, but that's okay - continue without user_id
+            pass
+    
+    return await get_job_details(
+        db=db, 
+        job_id=job_id,
+        user_id=user_id
+    )
+
+
+@router.get(
+    "/{job_id}/similar",
+    response_model=SimilarJobsResponse
+)
+async def get_similar_jobs_for_job(
+    job_id: int,
+    limit: int = Query(3, ge=1, le=10, description="Number of similar jobs to return"),
     db: Session = Depends(get_db)
 ):
-    """Get job details by ID with company info and skills (Public endpoint)"""
-    return await get_job_details(db=db, job_id=job_id)
+    """
+    Get similar jobs using KNN algorithm (Public endpoint).
+    
+    - Works for everyone (no authentication required)
+    - Uses job-to-job similarity based on:
+      * Skills (50% weight)
+      * Job title (20% weight)
+      * Experience requirements (15% weight)
+      * Category (10% weight)
+      * Employment type (5% weight)
+    - Returns top K most similar active jobs
+    - Excludes the reference job itself
+    - Used for "Jobs You May Like" section
+    """
+    return await get_similar_jobs(
+        db=db,
+        job_id=job_id,
+        limit=limit
+    )
 
 
 @router.put(

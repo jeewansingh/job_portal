@@ -47,11 +47,20 @@ export async function getMyJobs() {
 /**
  * Get job details by ID
  * @param {number} jobId - Job ID
- * @returns {Promise<Object>} - Job details
+ * @returns {Promise<Object>} - Job details (includes match_score if user is logged in)
  */
 export async function getJobDetails(jobId) {
   try {
-    const response = await axios.get(`${API_BASE_URL}/jobs/${jobId}`);
+    const token = localStorage.getItem('access_token');
+    
+    // Include Authorization header if token exists (for match score calculation)
+    const config = token ? {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    } : {};
+    
+    const response = await axios.get(`${API_BASE_URL}/jobs/${jobId}`, config);
     return response.data;
   } catch (error) {
     if (error.response?.data?.detail) {
@@ -157,5 +166,59 @@ export async function getBrowseJobs(filters = {}) {
       throw new Error(error.response.data.detail);
     }
     throw new Error(error.message || 'Failed to fetch jobs');
+  }
+}
+
+/**
+ * Get recommended jobs for logged-in user (Protected endpoint)
+ * @param {Object} options - Options
+ * @param {number} options.skip - Number of records to skip (optional)
+ * @param {number} options.limit - Maximum number of records (optional)
+ * @returns {Promise<Object>} - Object with jobs array, total count, skip, limit
+ */
+export async function getRecommendedJobs(options = {}) {
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const params = new URLSearchParams();
+    if (options.skip !== undefined) params.append('skip', options.skip);
+    if (options.limit !== undefined) params.append('limit', options.limit);
+    
+    const response = await axios.get(
+      `${API_BASE_URL}/jobs/recommended?${params.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data; // Returns { jobs: [...], total: number, skip: number, limit: number }
+  } catch (error) {
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
+    }
+    throw new Error(error.message || 'Failed to fetch recommended jobs');
+  }
+}
+
+
+/**
+ * Get similar jobs using KNN algorithm (Public endpoint)
+ * @param {number} jobId - Job ID to find similar jobs for
+ * @param {number} limit - Number of similar jobs to return (default: 3)
+ * @returns {Promise<Object>} - Object with jobs array and total count
+ */
+export async function getSimilarJobs(jobId, limit = 3) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/jobs/${jobId}/similar?limit=${limit}`);
+    return response.data; // Returns { jobs: [...], total: number }
+  } catch (error) {
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
+    }
+    throw new Error(error.message || 'Failed to fetch similar jobs');
   }
 }

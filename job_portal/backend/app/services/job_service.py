@@ -106,11 +106,73 @@ async def get_recruiter_jobs(db: Session, recruiter_id: int):
     return get_jobs_by_recruiter(db, recruiter_id)
 
 
-async def get_job_details(db: Session, job_id: int):
-    """Get job details by ID with skills and company info"""
+async def get_job_details(db: Session, job_id: int, user_id: int = None):
+    """
+    Get job details by ID with skills and company info.
+    If user_id is provided, also calculate match score.
+    
+    Args:
+        db: Database session
+        job_id: ID of the job
+        user_id: Optional user ID for calculating match score
+    
+    Returns:
+        Job details dict with optional match_score
+    """
+    from app.repositories.user_repository import UserRepository
+    from app.repositories.user_skill_repository import UserSkillRepository
+    from app.algorithms.recommendation import calculate_match_score
+    
     job = get_job_details_with_company(db, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # If user is logged in, calculate match score
+    if user_id:
+        try:
+            # Fetch user profile
+            user = UserRepository.get_by_id(db, user_id)
+            if user and user.is_active:
+                # Fetch user skill IDs
+                user_skills_objs = UserSkillRepository.get_user_skills(db, user_id)
+                user_skill_ids = [skill.id for skill in user_skills_objs]
+                
+                # Prepare user profile
+                user_profile = {
+                    "desired_position": user.desired_position or "",
+                    "experience_years": float(user.experience_years) if user.experience_years else 0.0,
+                    "preferred_job_type": user.preferred_job_type or "",
+                }
+                
+                # Prepare job data
+                job_data = {
+                    "job_title": job["job_title"],
+                    "employment_type": job["employment_type"],
+                    "experience_years": float(job["experience_years"]) if job["experience_years"] else 0.0,
+                }
+                
+                # Get job skill IDs
+                job_skill_ids = [skill["id"] for skill in job.get("skills", [])]
+                
+                # Calculate match score (only score, not matched skills)
+                match_result = calculate_match_score(
+                    user_profile=user_profile,
+                    user_skill_ids=user_skill_ids,
+                    job=job_data,
+                    job_skill_ids=job_skill_ids
+                )
+                
+                # Add only match_score to job
+                job["match_score"] = match_result["match_score"]
+        except Exception as e:
+            # If anything fails, just don't include match score
+            # Don't break the endpoint
+            print(f"Error calculating match score: {str(e)}")
+            job["match_score"] = None
+    else:
+        # User not logged in
+        job["match_score"] = None
+    
     return job
 
 
