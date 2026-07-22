@@ -184,3 +184,15 @@ class SimilarJobsResponse(BaseModel):
     """Schema for similar jobs response"""
     jobs: List[SimilarJobItem]
     total: int
+
+
+class CategoryItem(BaseModel):
+    """Schema for job category with count"""
+    category: str
+    job_count: int
+
+
+class CategoriesResponse(BaseModel):
+    """Schema for categories list response"""
+    categories: List[CategoryItem]
+    total: int

@@ -167,7 +167,6 @@ async def get_job_details(db: Session, job_id: int, user_id: int = None):
         except Exception as e:
             # If anything fails, just don't include match score
             # Don't break the endpoint
-            print(f"Error calculating match score: {str(e)}")
             job["match_score"] = None
     else:
         # User not logged in
@@ -307,6 +306,63 @@ async def browse_all_jobs(
         title=title,
         company=company,
         employment_type=employment_type,
+        skip=skip,
+        limit=limit
+    )
+    
+    return {
+        "jobs": jobs,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+
+
+async def get_all_job_categories(db: Session):
+    """
+    Get all unique job categories with job counts.
+    
+    Args:
+        db: Database session
+    
+    Returns:
+        Dict with categories list and total count
+    """
+    from app.repositories.job_repository import get_all_categories
+    
+    categories = get_all_categories(db)
+    
+    return {
+        "categories": categories,
+        "total": len(categories)
+    }
+
+
+async def get_jobs_by_category_name(
+    db: Session,
+    category: str,
+    skip: int = 0,
+    limit: int = 100
+):
+    """
+    Get all active jobs in a specific category.
+    Reuses browse jobs logic.
+    
+    Args:
+        db: Database session
+        category: Category name to filter by
+        skip: Pagination offset
+        limit: Maximum number of results
+    
+    Returns:
+        Dict with jobs list and metadata
+    """
+    from app.repositories.job_repository import get_jobs_by_category
+    
+    jobs, total = get_jobs_by_category(
+        db=db,
+        category=category,
         skip=skip,
         limit=limit
     )

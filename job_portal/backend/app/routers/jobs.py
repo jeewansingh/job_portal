@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_id, get_current_recruiter
 from app.core.security import verify_access_token
-from app.schemas.job import JobResponse, JobListItem, BrowseJobItem, BrowseJobsResponse, JobDetailsResponse, RecommendedJobsResponse, SimilarJobsResponse
+from app.schemas.job import JobResponse, JobListItem, BrowseJobItem, BrowseJobsResponse, JobDetailsResponse, RecommendedJobsResponse, SimilarJobsResponse, CategoriesResponse
 from app.services.job_service import (
     post_job,
     get_recruiter_jobs,
@@ -13,7 +13,9 @@ from app.services.job_service import (
     update_job_posting,
     close_job_posting,
     delete_job_posting,
-    browse_all_jobs
+    browse_all_jobs,
+    get_all_job_categories,
+    get_jobs_by_category_name
 )
 from app.services.recommendation_service import get_recommended_jobs
 from app.services.similar_jobs_service import get_similar_jobs
@@ -51,6 +53,52 @@ async def browse_jobs(
         title=title,
         company=company,
         employment_type=employment_type,
+        skip=skip,
+        limit=limit
+    )
+
+
+@router.get(
+    "/categories",
+    response_model=CategoriesResponse
+)
+async def get_categories(
+    db: Session = Depends(get_db)
+):
+    """
+    Get all unique job categories with job counts (Public endpoint).
+    
+    - Returns only categories that have active jobs
+    - Each category includes the count of active jobs
+    - Sorted alphabetically
+    - No authentication required
+    """
+    return await get_all_job_categories(db=db)
+
+
+@router.get(
+    "/category/{category_name}",
+    response_model=BrowseJobsResponse
+)
+async def get_jobs_by_category(
+    category_name: str,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Maximum number of records to return"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all jobs in a specific category (Public endpoint).
+    
+    - Returns only active jobs in the specified category
+    - Sorted by newest first (created_at DESC)
+    - Includes company info and skills
+    - No authentication required
+    - No match scores (this is not a recommendation endpoint)
+    - Supports pagination
+    """
+    return await get_jobs_by_category_name(
+        db=db,
+        category=category_name,
         skip=skip,
         limit=limit
     )

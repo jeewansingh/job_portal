@@ -222,3 +222,44 @@ export async function getSimilarJobs(jobId, limit = 3) {
     throw new Error(error.message || 'Failed to fetch similar jobs');
   }
 }
+
+
+/**
+ * Get all job categories with job counts (Public endpoint)
+ * @returns {Promise<Object>} - Object with categories array and total count
+ */
+export async function getJobCategories() {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/jobs/categories`);
+    return response.data; // Returns { categories: [...], total: number }
+  } catch (error) {
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
+    }
+    throw new Error(error.message || 'Failed to fetch job categories');
+  }
+}
+
+/**
+ * Get jobs by category (Public endpoint)
+ * @param {string} categoryName - Category name
+ * @param {Object} options - Options (skip, limit)
+ * @returns {Promise<Object>} - Object with jobs array, total, skip, limit
+ */
+export async function getJobsByCategory(categoryName, options = {}) {
+  try {
+    const params = new URLSearchParams();
+    if (options.skip !== undefined) params.append('skip', options.skip);
+    if (options.limit !== undefined) params.append('limit', options.limit);
+    
+    const response = await axios.get(
+      `${API_BASE_URL}/jobs/category/${encodeURIComponent(categoryName)}?${params.toString()}`
+    );
+    return response.data; // Returns { jobs: [...], total: number, skip: number, limit: number }
+  } catch (error) {
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
+    }
+    throw new Error(error.message || 'Failed to fetch jobs by category');
+  }
+}

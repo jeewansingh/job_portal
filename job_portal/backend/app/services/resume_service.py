@@ -1,13 +1,6 @@
 import re
 
-from Levenshtein import distance
-
 from app.utils.pdf_reader import extract_text_from_pdf
-from app.data.skills import (
-    ALL_SKILLS,
-    ALL_SKILLS_SET,
-)
-from app.data.aliases import ALIASES
 
 
 # ============================================================
@@ -225,14 +218,17 @@ def detect_sections(text: str):
 # ============================================================
 # SKILL EXTRACTION
 # ============================================================
-def extract_skills(sections):
-
+def extract_skills_text(sections):
+    """
+    Extract raw skill names from resume text.
+    Returns list of raw skill strings (not matched yet).
+    """
     skills_lines = sections.get("SKILLS", [])
 
     if not skills_lines:
         return []
 
-    found = set()
+    found = []
 
     for line in skills_lines:
 
@@ -260,28 +256,10 @@ def extract_skills(sections):
             # Ignore useless words
             if token in {"etc", "etc.", "&", "and"}:
                 continue
+            
+            found.append(token)
 
-            # Apply alias
-            token = ALIASES.get(token, token)
-
-            # Exact match
-            for skill in ALL_SKILLS:
-
-                if normalize(skill) == token:
-
-                    found.add(skill)
-                    break
-
-            else:
-                # Levenshtein fallback
-                for skill in ALL_SKILLS:
-
-                    if distance(token, normalize(skill)) <= 3:
-
-                        found.add(skill)
-                        break
-
-    return sorted(found)
+    return found
 
 # ============================================================
 # EDUCATION
@@ -349,28 +327,38 @@ def extract_projects(sections):
 # MAIN SERVICE
 # ============================================================
 
-async def extract_resume(file):
-
+async def extract_resume(file, db=None):
+    """
+    Extract resume information from PDF file.
+    
+    Args:
+        file: Uploaded PDF file
+        db: Optional database session for skill matching
+    
+    Returns:
+        Dict with extracted information including matched skills
+    """
     pdf_bytes = await file.read()
 
     text = extract_text_from_pdf(pdf_bytes)
 
     sections = detect_sections(text)
-
+    
+    # Extract raw skill names from text
+    raw_skills = extract_skills_text(sections)
+    
+    # If database session provided, match skills using three-tier strategy
+    matched_skills = []
+    if db:
+        from app.repositories.skill_matching_repository import match_skills
+        matched_skills = match_skills(db, raw_skills)
+    
     return {
-
         "name": extract_name(text),
-
         "email": extract_email(text),
-
         "phone": extract_phone(text),
-
         "portfolio": extract_portfolio(text),
-
-        "skills": extract_skills(sections),
-
+        "skills": matched_skills,  # Now returns [{"id": 1, "name": "Python"}, ...]
         "education": extract_education(sections),
-
         "projects": extract_projects(sections),
-
     }

@@ -4,6 +4,7 @@ from app.models.user_skill import UserSkill
 from app.models.recruiter import Recruiter
 from app.models.job import Job
 from app.models.job_skill import JobSkill
+from app.models.skill_alias import SkillAlias
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,7 @@ from app.models import user_skill
 from app.models import recruiter
 from app.models import job
 from app.models import job_skill
+from app.models import skill_alias
 
 app = FastAPI()
 

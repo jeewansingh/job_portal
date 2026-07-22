@@ -222,3 +222,121 @@ def get_browse_jobs(
         result.append(job_dict)
     
     return result, total_count
+
+
+
+def get_all_categories(db: Session) -> List[dict]:
+    """
+    Get all unique categories from active jobs with job counts.
+    
+    Returns:
+        List of dicts with category name and job count, sorted alphabetically
+    """
+    from sqlalchemy import func, distinct
+    
+    # Query distinct categories with their job counts
+    categories = db.query(
+        Job.category,
+        func.count(Job.id).label('job_count')
+    ).filter(
+        Job.is_active == True,
+        Job.is_closed == False
+    ).group_by(
+        Job.category
+    ).order_by(
+        Job.category.asc()
+    ).all()
+    
+    # Convert to list of dicts
+    result = [
+        {
+            "category": category,
+            "job_count": job_count
+        }
+        for category, job_count in categories
+    ]
+    
+    return result
+
+
+def get_jobs_by_category(
+    db: Session,
+    category: str,
+    skip: int = 0,
+    limit: int = 100
+) -> tuple[List[dict], int]:
+    """
+    Get all active jobs in a specific category.
+    Reuses the same logic as browse_jobs but filters by category.
+    
+    Args:
+        db: Database session
+        category: Category name to filter by
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+    
+    Returns:
+        Tuple of (List of job dictionaries with company and skills info, total count)
+    """
+    # Build base query (same as get_browse_jobs)
+    base_query = db.query(
+        Job.id,
+        Job.job_title,
+        Job.category,
+        Job.employment_type,
+        Job.experience_years,
+        Job.salary_per_month,
+        Job.location,
+        Job.job_description,
+        Job.job_specification,
+        Job.deadline,
+        Job.created_at,
+        Job.is_closed,
+        Job.is_active,
+        Recruiter.company_name,
+        Recruiter.company_logo_url
+    ).join(
+        Recruiter, Job.recruiter_id == Recruiter.id
+    ).filter(
+        Job.is_active == True,
+        Job.is_closed == False,
+        Job.category == category  # Filter by category
+    )
+    
+    # Get total count before pagination
+    total_count = base_query.count()
+    
+    # Order by created_at desc (newest first) and apply pagination
+    jobs = base_query.order_by(Job.created_at.desc()).offset(skip).limit(limit).all()
+    
+    # Convert to dict and add skills (same as get_browse_jobs)
+    result = []
+    for job in jobs:
+        # Get skills for this job
+        skills = db.query(Skill).join(
+            JobSkill, Skill.id == JobSkill.skill_id
+        ).filter(
+            JobSkill.job_id == job.id
+        ).all()
+        
+        job_dict = {
+            "id": job.id,
+            "job_title": job.job_title,
+            "category": job.category,
+            "employment_type": job.employment_type,
+            "experience_years": job.experience_years,
+            "salary_per_month": job.salary_per_month,
+            "location": job.location,
+            "job_description": job.job_description,
+            "job_specification": job.job_specification,
+            "deadline": job.deadline,
+            "created_at": job.created_at,
+            "is_closed": job.is_closed,
+            "is_active": job.is_active,
+            "company_name": job.company_name,
+            "company_logo_url": job.company_logo_url,
+            "skills": [{"id": skill.id, "name": skill.name} for skill in skills]
+        }
+        result.append(job_dict)
+    
+    return result, total_count

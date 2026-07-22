@@ -96,3 +96,29 @@ export function getStoredUser() {
 export function isAuthenticated() {
   return !!getAccessToken();
 }
+
+
+/**
+ * Upload and parse resume to extract information
+ * @param {File} resumeFile - PDF file to parse
+ * @returns {Promise<Object>} - Extracted resume data (name, email, phone, skills, etc.)
+ */
+export async function uploadResume(resumeFile) {
+  try {
+    const formData = new FormData();
+    formData.append('file', resumeFile);
+    
+    const response = await axios.post(`${API_BASE_URL}/resume/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (error.response?.data?.detail) {
+      throw new Error(error.response.data.detail);
+    }
+    throw new Error(error.message || 'Failed to parse resume');
+  }
+}

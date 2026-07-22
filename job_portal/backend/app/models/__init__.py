@@ -4,5 +4,6 @@ from app.models.user_skill import UserSkill
 from app.models.recruiter import Recruiter
 from app.models.job import Job
 from app.models.job_skill import JobSkill
+from app.models.skill_alias import SkillAlias
 
-__all__ = ["User", "Skill", "UserSkill", "Recruiter", "Job", "JobSkill"]
+__all__ = ["User", "Skill", "UserSkill", "Recruiter", "Job", "JobSkill", "SkillAlias"]

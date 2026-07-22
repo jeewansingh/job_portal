@@ -5,7 +5,7 @@ import Footer from "../../components/Footer";
 import SkillSelector from "../../components/SkillSelector";
 import { useUser } from "../../context/UserContext";
 import { fetchSkills } from "../../services/skills";
-import { registerUser } from "../../services/auth";
+import { registerUser, uploadResume, loginUser } from "../../services/auth";
 import "../../styles/Auth.css";
 
 const JOB_TYPES = [
@@ -64,6 +64,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [resumePdf, setResumePdf] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
+  const [parsingResume, setParsingResume] = useState(false);
   const resumeInputRef = useRef(null);
   const profileInputRef = useRef(null);
 
@@ -101,14 +102,51 @@ export default function Register() {
     });
   };
 
-  const handleResumeChange = (e) => {
+  const handleResumeChange = async (e) => {
     const file = e.target.files?.[0] ?? null;
-    if (file && file.type !== "application/pdf") {
+    if (!file) return;
+    
+    if (file.type !== "application/pdf") {
       alert("Please upload a PDF file.");
       e.target.value = "";
       return;
     }
+    
     setResumePdf(file);
+    
+    // Auto-parse resume and fill form
+    try {
+      setParsingResume(true);
+      setError("");
+      
+      const extractedData = await uploadResume(file);
+      
+      // Auto-fill form fields with extracted data
+      setForm((prev) => ({
+        ...prev,
+        fullName: extractedData.name || prev.fullName,
+        email: extractedData.email || prev.email,
+        phoneNumber: extractedData.phone || prev.phoneNumber,
+        education: extractedData.education || prev.education,
+        portfolioLink: extractedData.portfolio && extractedData.portfolio.length > 0 
+          ? extractedData.portfolio[0] 
+          : prev.portfolioLink,
+      }));
+      
+      // Auto-fill skills (matched skills with IDs)
+      if (extractedData.skills && extractedData.skills.length > 0) {
+        setSelectedSkills(extractedData.skills);
+      }
+      
+      // Show success message
+      alert(`Resume parsed successfully! Found ${extractedData.skills.length} skills. You can edit the information before submitting.`);
+      
+    } catch (err) {
+      console.error("Resume parsing error:", err);
+      setError(`Resume parsing failed: ${err.message}. You can still fill the form manually.`);
+    } finally {
+      setParsingResume(false);
+    }
   };
 
   const handleProfileChange = (e) => {
@@ -176,17 +214,33 @@ export default function Register() {
         formData.append("profile_picture", profilePicture);
       }
 
-      // Call backend API
+      // Step 1: Register user
       const userData = await registerUser(formData);
       
-      // Store user data in context
-      register({
-        ...userData,
-        profilePictureUrl: userData.profile_picture_url,
-      }, "candidate");
-      
-      // Navigate to dashboard
-      navigate("/dashboard");
+      // Step 2: Automatically log them in to get token
+      try {
+        const loginData = await loginUser(form.email.trim(), form.password);
+        
+        // Step 3: Store user data in context (loginUser already stored token)
+        // Map the backend response to match what UserContext expects
+        register({
+          id: loginData.user.id,
+          fullName: loginData.user.full_name,
+          email: loginData.user.email,
+          profilePictureUrl: loginData.user.profile_picture_url,
+          preferredJobType: loginData.user.preferred_job_type,
+          role: loginData.user.role || "candidate",
+        }, "candidate");
+        
+        // Step 4: Navigate to dashboard
+        navigate("/dashboard");
+      } catch (loginErr) {
+        console.error("Auto-login failed:", loginErr);
+        // Registration succeeded but auto-login failed
+        // Redirect to login page with message
+        alert("Account created successfully! Please log in.");
+        navigate("/login");
+      }
       
     } catch (err) {
       console.error("Registration error:", err);
