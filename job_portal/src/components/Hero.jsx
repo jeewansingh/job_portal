@@ -1,4 +1,5 @@
 // import { ArrowRight, MapPin, Clock, DollarSign } from "lucide-react";
+import { Link } from "react-router-dom";
 import "../styles/Hero.css";
 import heroImage from "../assets/hero-image.png";
 
@@ -26,12 +27,12 @@ export default function Hero() {
           </p>
 
           <div className="hero-section__cta-group">
-            <a href="#" className="hero-section__btn hero-section__btn--primary">
+            <Link to="/register" className="hero-section__btn hero-section__btn--primary">
               Register Free
-            </a>
-            <a href="#" className="hero-section__btn hero-section__btn--secondary">
+            </Link>
+            <Link to="/browse-jobs" className="hero-section__btn hero-section__btn--secondary">
               Explore Jobs
-            </a>
+            </Link>
           </div>
         </div>
 

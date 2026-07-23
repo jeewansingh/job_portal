@@ -5,6 +5,7 @@ from app.models.recruiter import Recruiter
 from app.models.job import Job
 from app.models.job_skill import JobSkill
 from app.models.skill_alias import SkillAlias
+from app.models.application import Application
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,7 @@ from app.routers.jobs import router as job_router
 from app.routers.resume import router as resume_router
 from app.routers.skills import router as skill_router
 from app.routers.auth import router as auth_router
+from app.routers.applications import router as application_router
 
 from app.models import user
 from app.models import skill
@@ -25,6 +27,7 @@ from app.models import recruiter
 from app.models import job
 from app.models import job_skill
 from app.models import skill_alias
+from app.models import application
 
 app = FastAPI()
 
@@ -58,3 +61,4 @@ app.include_router(recruiter_router)
 app.include_router(job_router)
 app.include_router(resume_router)
 app.include_router(skill_router)
+app.include_router(application_router)

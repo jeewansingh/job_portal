@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { getJobDetails, getSimilarJobs } from "../../services/job";
+import { checkApplicationStatus, applyForJob } from "../../services/applications";
 import { getFileUrl } from "../../services/api";
 import DashboardLayout from "../../components/DashboardLayout";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
 import JobCard from "../../components/JobCard";
 import "../../styles/Dashboard.css";
 import "../../styles/JobDetails.css";
@@ -15,8 +18,10 @@ export default function JobDetails() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [applicationStatus, setApplicationStatus] = useState(null); // For future: will come from backend
-  const [matchScore, setMatchScore] = useState(0); // For future: calculate based on user skills
+  const [applicationStatus, setApplicationStatus] = useState(null); // null = not applied
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState("");
+  const [matchScore, setMatchScore] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [relatedJobs, setRelatedJobs] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -31,15 +36,11 @@ export default function JobDetails() {
         const jobData = await getJobDetails(jobId);
         setJob(jobData);
         
-        // Use match_score from backend if user is logged in
         if (isLoggedIn && user && jobData.match_score !== null && jobData.match_score !== undefined) {
           setMatchScore(jobData.match_score);
         } else {
-          setMatchScore(0); // Default when not logged in
+          setMatchScore(0);
         }
-        
-        // TODO: Fetch application status from backend when applications table is ready
-        
       } catch (err) {
         console.error("Failed to fetch job:", err);
         setError(err.message || "Failed to load job details");
@@ -50,6 +51,29 @@ export default function JobDetails() {
     
     fetchJob();
   }, [jobId, isLoggedIn, user]);
+
+  // Check application status once job is loaded and user is logged in
+  useEffect(() => {
+    if (!isLoggedIn || !job) return;
+
+    async function fetchStatus() {
+      try {
+        const data = await checkApplicationStatus(jobId);
+        if (data.applied) {
+          setApplicationStatus(data.status);
+        }
+      } catch (err) {
+        // If 401, token is invalid - user needs to re-login
+        if (err.message?.includes("401") || err.message?.includes("Unauthorized")) {
+          // Don't show error, just leave as not applied
+          return;
+        }
+        // Non-critical for other errors — just leave button as "Apply Now"
+      }
+    }
+
+    fetchStatus();
+  }, [jobId, isLoggedIn, job]);
 
   // Fetch related jobs (only for logged-in users)
   useEffect(() => {
@@ -84,16 +108,32 @@ export default function JobDetails() {
     return () => window.clearTimeout(timer);
   }, [showToast]);
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!isLoggedIn) {
-      // Redirect to login with return URL
       navigate(`/login?redirect=/jobs/${jobId}`);
       return;
     }
 
-    // TODO: Implement application submission to backend
-    // For now, show toast
-    setShowToast(true);
+    setApplying(true);
+    setApplyError("");
+
+    try {
+      await applyForJob(jobId);
+      setApplicationStatus("UNDER_REVIEW");
+      setShowToast(true);
+    } catch (err) {
+      const errorMsg = err.message || "Failed to submit application";
+      
+      // If token is invalid/expired, redirect to login
+      if (errorMsg.includes("Not authenticated")) {
+        navigate(`/login?redirect=/jobs/${jobId}`);
+        return;
+      }
+      
+      setApplyError(errorMsg);
+    } finally {
+      setApplying(false);
+    }
   };
 
   // Helper to format date
@@ -163,28 +203,34 @@ export default function JobDetails() {
   };
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="dashboard">
-          <div className="dashboard__container">
-            <div className="dashboard__empty-state">Loading job details...</div>
-          </div>
+    const loadingContent = (
+      <div className="dashboard">
+        <div className="dashboard__container">
+          <div className="dashboard__empty-state">Loading job details...</div>
         </div>
-      </DashboardLayout>
+      </div>
+    );
+    return isLoggedIn ? (
+      <DashboardLayout>{loadingContent}</DashboardLayout>
+    ) : (
+      <><Navbar />{loadingContent}<Footer /></>
     );
   }
 
   if (error || !job) {
-    return (
-      <DashboardLayout>
-        <div className="dashboard">
-          <div className="dashboard__container">
-            <div className="dashboard__empty-state">
-              {error || "This job is no longer available."}
-            </div>
+    const errorContent = (
+      <div className="dashboard">
+        <div className="dashboard__container">
+          <div className="dashboard__empty-state">
+            {error || "This job is no longer available."}
           </div>
         </div>
-      </DashboardLayout>
+      </div>
+    );
+    return isLoggedIn ? (
+      <DashboardLayout>{errorContent}</DashboardLayout>
+    ) : (
+      <><Navbar />{errorContent}<Footer /></>
     );
   }
 
@@ -200,146 +246,159 @@ export default function JobDetails() {
     { icon: "⏰", label: "Deadline", value: deadlineDays ? `${deadlineDays} days left` : "Expired" },
   ];
 
-  return (
-    <DashboardLayout>
-      <div className="dashboard">
-        <div className="dashboard__container">
-          <section className="dashboard__page-header">
-            <Link
-                className="dashboard__back-link"
-                onClick={() => navigate(-1)}
-            >
-            ← Go Back 
-            </Link>
-            <div className="dashboard__detail-hero">
-              <div className="dashboard__detail-summary">
-                <span className="dashboard__label">Job Details</span>
-                <div className="dashboard__job_name">{job.job_title}</div>
-                <p className="dashboard__subtitle">{job.company_name} • {job.location}</p>
-                <div className="dashboard__detail-meta">
-                  <span>{job.employment_type}</span>
-                  <span>{job.salary_per_month || "Salary not disclosed"}</span>
-                  <span>Posted {postedTime}</span>
-                </div>
-              </div>
-              <div className="dashboard__detail-actions">
-                {isLoggedIn && (
-                  <div className="dashboard__match-score">
-                    <div className="dashboard__match-score-ring" style={{ "--score-percent": `${matchScore}%` }}>
-                      <span>{matchScore}%</span>
-                    </div>
-                    <span className="dashboard__match-score-label">Match Score</span>
-                  </div>
-                )}
-                <button
-                  className={`dashboard__detail-btn ${
-                    isLoggedIn && applicationStatus
-                      ? "dashboard__detail-btn--applied"
-                      : ""
-                  }`}
-                  onClick={handleApply}
-                  disabled={isLoggedIn && Boolean(applicationStatus)}
-                >
-                  {!isLoggedIn
-                    ? "Apply Now"
-                    : applicationStatus || "Apply Now"}
-                </button>
+  const content = (
+    <div className="dashboard">
+      <div className="dashboard__container">
+        <section className="dashboard__page-header">
+          <Link
+              className="dashboard__back-link"
+              onClick={() => navigate(-1)}
+          >
+          ← Go Back 
+          </Link>
+          <div className="dashboard__detail-hero">
+            <div className="dashboard__detail-summary">
+              <span className="dashboard__label">Job Details</span>
+              <div className="dashboard__job_name">{job.job_title}</div>
+              <p className="dashboard__subtitle">{job.company_name} • {job.location}</p>
+              <div className="dashboard__detail-meta">
+                <span>{job.employment_type}</span>
+                <span>{job.salary_per_month || "Salary not disclosed"}</span>
+                <span>Posted {postedTime}</span>
               </div>
             </div>
-          </section>
-
-          <div className="dashboard__detail-layout">
-            <div className="dashboard__detail-main">
-              <div className="dashboard__detail-card">
-                <h2>Job Overview</h2>
-                <div className="dashboard__summary-grid">
-                  {overviewSummary.map((item) => (
-                    <div className="dashboard__summary-item" key={item.label}>
-                      <div className="dashboard__summary-icon" aria-hidden="true">
-                        {item.icon}
-                      </div>
-                      <div>
-                        <p className="dashboard__summary-label">{item.label}</p>
-                        <p className="dashboard__summary-value">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="dashboard__detail-card dashboard__detail-card--wide">
-                <h2>Job Description</h2>
-                <p>{job.job_description}</p>
-              </div>
-
-              <div className="dashboard__detail-card dashboard__detail-card--wide">
-                <h2>Job Specification</h2>
-                <p>{job.job_specification}</p>
-              </div>
-
-              <div className="dashboard__detail-card">
-                <h2>Required Skills</h2>
-                <div className="dashboard__tag-list">
-                  {job.skills && job.skills.length > 0 ? (
-                    job.skills.map((skill) => (
-                      <span key={skill.id} className="dashboard__tag">
-                        {skill.name}
-                      </span>
-                    ))
-                  ) : (
-                    <p>No specific skills required</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <aside className="dashboard__detail-sidebar">
-              <div className="dashboard__detail-card dashboard__detail-card--sticky">
-                <h2>Company</h2>
-                <div className="dashboard__company-card">
-                  {job.company_logo_url ? (
-                    <img 
-                      src={getFileUrl(job.company_logo_url)} 
-                      alt={`${job.company_name} logo`}
-                      className="dashboard__company-logo"
-                      style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
-                    />
-                  ) : (
-                    <div className="dashboard__company-logo" style={{ 
-                      background: `linear-gradient(135deg, oklch(0.5 0.12 ${Math.abs(job.company_name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0)) % 360}), oklch(0.55 0.14 ${(Math.abs(job.company_name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0)) % 360) + 15}))` 
-                    }}>
-                      {job.company_name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <h3>{job.company_name}</h3>
-                    <p>{job.company_description || "A leading company in the industry."}</p>
+            <div className="dashboard__detail-actions">
+              {isLoggedIn && (
+                <div className="dashboard__match-score">
+                  <div className="dashboard__match-score-ring" style={{ "--score-percent": `${matchScore}%` }}>
+                    <span>{matchScore}%</span>
                   </div>
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          {relatedJobs.length > 0 && (
-            <section className="dashboard__detail-related">
-              <div className="dashboard__section-header">
-                <h2 className="dashboard__section-title">Jobs You May Like</h2>
-              </div>
-              {loadingRelated ? (
-                <div className="dashboard__empty-state">Loading similar jobs...</div>
-              ) : (
-                <div className="dashboard__jobs-grid">
-                  {relatedJobs.map((jobItem) => (
-                    <JobCard key={jobItem.id} job={jobItem} href={`/jobs/${jobItem.id}`} showMatchBadge={false} />
-                  ))}
+                  <span className="dashboard__match-score-label">Match Score</span>
                 </div>
               )}
-            </section>
-          )}
+              {applyError && (
+                <p className="dashboard__apply-error">{applyError}</p>
+              )}
+              <button
+                className={`dashboard__detail-btn ${
+                  applicationStatus ? "dashboard__detail-btn--applied" : ""
+                }`}
+                onClick={handleApply}
+                disabled={Boolean(applicationStatus) || applying}
+              >
+                {applying
+                  ? "Submitting..."
+                  : applicationStatus
+                  ? applicationStatus.replace(/_/g, " ")
+                  : "Apply Now"}
+              </button>
+            </div>
+          </div>
+        </section>
 
-          {showToast && <div className="dashboard__toast">Application will be submitted soon!</div>}
+        <div className="dashboard__detail-layout">
+          <div className="dashboard__detail-main">
+            <div className="dashboard__detail-card">
+              <h2>Job Overview</h2>
+              <div className="dashboard__summary-grid">
+                {overviewSummary.map((item) => (
+                  <div className="dashboard__summary-item" key={item.label}>
+                    <div className="dashboard__summary-icon" aria-hidden="true">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="dashboard__summary-label">{item.label}</p>
+                      <p className="dashboard__summary-value">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="dashboard__detail-card dashboard__detail-card--wide">
+              <h2>Job Description</h2>
+              <p>{job.job_description}</p>
+            </div>
+
+            <div className="dashboard__detail-card dashboard__detail-card--wide">
+              <h2>Job Specification</h2>
+              <p>{job.job_specification}</p>
+            </div>
+
+            <div className="dashboard__detail-card">
+              <h2>Required Skills</h2>
+              <div className="dashboard__tag-list">
+                {job.skills && job.skills.length > 0 ? (
+                  job.skills.map((skill) => (
+                    <span key={skill.id} className="dashboard__tag">
+                      {skill.name}
+                    </span>
+                  ))
+                ) : (
+                  <p>No specific skills required</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <aside className="dashboard__detail-sidebar">
+            <div className="dashboard__detail-card dashboard__detail-card--sticky">
+              <h2>Company</h2>
+              <div className="dashboard__company-card">
+                {job.company_logo_url ? (
+                  <img 
+                    src={getFileUrl(job.company_logo_url)} 
+                    alt={`${job.company_name} logo`}
+                    className="dashboard__company-logo"
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
+                  />
+                ) : (
+                  <div className="dashboard__company-logo" style={{ 
+                    background: `linear-gradient(135deg, oklch(0.5 0.12 ${Math.abs(job.company_name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0)) % 360}), oklch(0.55 0.14 ${(Math.abs(job.company_name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0)) % 360) + 15}))` 
+                  }}>
+                    {job.company_name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <h3>{job.company_name}</h3>
+                  <p>{job.company_description || "A leading company in the industry."}</p>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
+
+        {relatedJobs.length > 0 && (
+          <section className="dashboard__detail-related">
+            <div className="dashboard__section-header">
+              <h2 className="dashboard__section-title">Jobs You May Like</h2>
+            </div>
+            {loadingRelated ? (
+              <div className="dashboard__empty-state">Loading similar jobs...</div>
+            ) : (
+              <div className="dashboard__jobs-grid">
+                {relatedJobs.map((jobItem) => (
+                  <JobCard key={jobItem.id} job={jobItem} href={`/jobs/${jobItem.id}`} showMatchBadge={false} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {showToast && <div className="dashboard__toast">Application submitted successfully!</div>}
       </div>
-    </DashboardLayout>
+    </div>
+  );
+
+  if (isLoggedIn) {
+    return <DashboardLayout>{content}</DashboardLayout>;
+  }
+
+  return (
+    <>
+      <Navbar />
+      {content}
+      <Footer />
+    </>
   );
 }

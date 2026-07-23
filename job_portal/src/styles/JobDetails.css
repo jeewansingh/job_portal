@@ -280,6 +280,14 @@
   font-weight: 600;
 }
 
+.dashboard__apply-error {
+  font-size: 0.85rem;
+  color: #dc2626;
+  margin: 0;
+  max-width: 240px;
+  text-align: right;
+}
+
 @media (max-width: 900px) {
   .dashboard__detail-layout {
     grid-template-columns: 1fr;

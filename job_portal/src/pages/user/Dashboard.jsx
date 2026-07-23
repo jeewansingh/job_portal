@@ -5,21 +5,28 @@ import DashboardLayout from "../../components/DashboardLayout";
 import JobCard from "../../components/JobCard";
 import ProfileCompletionRing from "../../components/ProfileCompletionRing";
 
-import { getRecommendedJobs } from "../../services/job"; // Changed from jobs.js to job.js
-import { getRecentApplications } from "../../services/applications";
+import { getRecommendedJobs } from "../../services/job";
+import { getUserApplications } from "../../services/applications";
 import { getUserProfile } from "../../services/profile";
+import { getFileUrl } from "../../services/api";
 
 import { useUser } from "../../context/UserContext";
 import { formatDate, getDisplayName, calculateProfileCompletionFromBackend } from "../../utils/profile";
 
 import "../../styles/Dashboard.css";
 
+const STATUS_LABEL = {
+  UNDER_REVIEW: "Under Review",
+  INTERVIEW: "Interview",
+  OFFER: "Offer",
+  REJECTED: "Rejected",
+};
+
 const statusClassMap = {
-  Applied: "application-card__status--applied",
-  "Under Review": "application-card__status--review",
-  Interview: "application-card__status--interview",
-  Offer: "application-card__status--offer",
-  Rejected: "application-card__status--rejected",
+  UNDER_REVIEW: "application-card__status--review",
+  INTERVIEW: "application-card__status--interview",
+  OFFER: "application-card__status--offer",
+  REJECTED: "application-card__status--rejected",
 };
 
 export default function Dashboard() {
@@ -83,9 +90,31 @@ export default function Dashboard() {
         setRecommendedJobs(transformedJobs);
         setLoadingJobs(false);
 
-        // Fetch recent applications
-        const applications = await getRecentApplications();
-        setRecentApplications(applications);
+        // Fetch recent applications (last 3)
+        try {
+          const applications = await getUserApplications();
+          const mapped = applications.slice(0, 3).map((app) => {
+            const hash = (app.company_name || "").split("").reduce(
+              (acc, c) => c.charCodeAt(0) + ((acc << 5) - acc), 0
+            );
+            const hue = Math.abs(hash) % 360;
+            return {
+              id: app.id,
+              jobId: app.job_id,
+              jobTitle: app.job_title,
+              company: app.company_name,
+              location: app.location,
+              appliedDate: app.applied_at,
+              status: app.status,
+              companyLogoUrl: app.company_logo_url,
+              logoLetter: (app.company_name || "?").charAt(0).toUpperCase(),
+              logoColor: `linear-gradient(135deg, oklch(0.5 0.12 ${hue}), oklch(0.55 0.14 ${hue + 15}))`,
+            };
+          });
+          setRecentApplications(mapped);
+        } catch {
+          // non-critical, leave empty
+        }
 
         // Load profile completion from backend (no user ID needed)
         try {
@@ -217,14 +246,28 @@ export default function Dashboard() {
                   className="application-card"
                 >
                   <div className="application-card__main">
-                    <div
-                      className="application-card__logo"
-                      style={{
-                        background: application.logoColor,
-                      }}
-                    >
-                      {application.logoLetter}
-                    </div>
+                    {application.companyLogoUrl ? (
+                      <img
+                        src={getFileUrl(application.companyLogoUrl)}
+                        alt={application.company}
+                        className="application-card__logo"
+                        style={{
+                          width: 48,
+                          height: 48,
+                          objectFit: "cover",
+                          borderRadius: 8,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="application-card__logo"
+                        style={{
+                          background: application.logoColor,
+                        }}
+                      >
+                        {application.logoLetter}
+                      </div>
+                    )}
 
                     <div className="application-card__details">
                       <h3 className="application-card__title">
@@ -246,10 +289,10 @@ export default function Dashboard() {
                   <div className="application-card__actions">
                     <span
                       className={`application-card__status ${
-                        statusClassMap[application.status]
+                        statusClassMap[application.status] || ""
                       }`}
                     >
-                      {application.status}
+                      {STATUS_LABEL[application.status] || application.status}
                     </span>
 
                     <Link
