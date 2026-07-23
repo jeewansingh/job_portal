@@ -29,7 +29,7 @@ const initialForm = {
   email: "",
   phoneNumber: "",
   desiredPosition: "",
-  preferredJobTypes: [],
+  preferredJobType: "", // Changed from array to string
   portfolioLink: "",
   password: "",
   confirmPassword: "",
@@ -94,12 +94,10 @@ export default function Register() {
   };
 
   const handleJobTypeChange = (jobType) => {
-    setForm((prev) => {
-      const selected = prev.preferredJobTypes.includes(jobType)
-        ? prev.preferredJobTypes.filter((type) => type !== jobType)
-        : [...prev.preferredJobTypes, jobType];
-      return { ...prev, preferredJobTypes: selected };
-    });
+    setForm((prev) => ({
+      ...prev,
+      preferredJobType: jobType, // Set single value instead of array
+    }));
   };
 
   const handleResumeChange = async (e) => {
@@ -191,11 +189,8 @@ export default function Register() {
       formData.append("experience_years", form.experienceYears || "0");
       formData.append("desired_position", form.desiredPosition.trim() || "");
       
-      // Convert preferredJobTypes array to single string (or send first one)
-      const preferredJobType = form.preferredJobTypes.length > 0 
-        ? form.preferredJobTypes[0] 
-        : "";
-      formData.append("preferred_job_type", preferredJobType);
+      // Send single preferred job type
+      formData.append("preferred_job_type", form.preferredJobType || "");
       
       formData.append("portfolio_link", form.portfolioLink.trim() || "");
       
@@ -429,8 +424,10 @@ export default function Register() {
                   onChange={handleChange}
                   placeholder="2"
                   min="0"
+                  max="99"
                   step="0.5"
                 />
+                <small style={{color: '#888', fontSize: '0.85em'}}>Enter years of experience (0-99)</small>
               </div>
             </div>
 
@@ -447,13 +444,15 @@ export default function Register() {
             </div>
 
             <fieldset className="auth-fieldset">
-              <legend>Preferred Job Types</legend>
+              <legend>Preferred Job Type</legend>
               <div className="auth-checkboxes">
                 {JOB_TYPES.map((jobType) => (
                   <label key={jobType} className="auth-checkbox">
                     <input
-                      type="checkbox"
-                      checked={form.preferredJobTypes.includes(jobType)}
+                      type="radio"
+                      name="preferredJobType"
+                      value={jobType}
+                      checked={form.preferredJobType === jobType}
                       onChange={() => handleJobTypeChange(jobType)}
                     />
                     <span>{jobType}</span>

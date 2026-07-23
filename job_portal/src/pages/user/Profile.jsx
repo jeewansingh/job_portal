@@ -63,8 +63,10 @@ export default function Profile() {
   const displayName = getDisplayName(user);
   const initial = displayName.charAt(0).toUpperCase();
 
-  // Fetch available skills on mount
+  // Fetch available skills only when editing
   useEffect(() => {
+    if (!isEditing) return; // Only fetch when in edit mode
+    
     async function loadSkills() {
       try {
         const skills = await fetchSkills();
@@ -75,7 +77,7 @@ export default function Profile() {
     }
     
     loadSkills();
-  }, []);
+  }, [isEditing]); // Depend on isEditing
 
   // Fetch profile data on mount
   useEffect(() => {

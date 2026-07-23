@@ -41,7 +41,7 @@ async def register_user(
         password: Plain password (will be hashed)
         address: User's address
         education: Education information
-        experience_years: Years of experience
+        experience_years: Years of experience (0-99)
         desired_position: Desired job position
         preferred_job_type: Preferred job type
         portfolio_link: Portfolio link
@@ -53,8 +53,24 @@ async def register_user(
         The created user object
         
     Raises:
-        HTTPException: If date format is invalid or skill IDs don't exist
+        HTTPException: If validation fails or email already exists
     """
+    from sqlalchemy.exc import IntegrityError
+    
+    # Validate experience_years (must be between 0 and 99)
+    if experience_years < 0 or experience_years > 99:
+        raise HTTPException(
+            status_code=400,
+            detail="Experience years must be between 0 and 99"
+        )
+    
+    # Check if email already exists
+    existing_user = UserRepository.get_by_email(db, email)
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered. Please use a different email or login."
+        )
     
     # Save resume file if provided
     resume_url = await save_resume(resume)
@@ -89,33 +105,48 @@ async def register_user(
         profile_picture_url=profile_picture_url,
     )
 
-    # Save user (flush only, no commit)
-    user = UserRepository.create(db, user)
+    try:
+        # Save user (flush only, no commit)
+        user = UserRepository.create(db, user)
 
-    # Save user's skills by skill IDs
-    if skill_ids:
-        # Remove duplicates and None values
-        unique_skill_ids = list(set(filter(None, skill_ids)))
+        # Save user's skills by skill IDs
+        if skill_ids:
+            # Remove duplicates and None values
+            unique_skill_ids = list(set(filter(None, skill_ids)))
+            
+            if unique_skill_ids:
+                # Verify all skill IDs exist before inserting
+                valid_skill_ids = SkillRepository.verify_skill_ids(db, unique_skill_ids)
+                
+                if len(valid_skill_ids) != len(unique_skill_ids):
+                    invalid_ids = set(unique_skill_ids) - set(valid_skill_ids)
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid skill IDs: {sorted(list(invalid_ids))}"
+                    )
+                
+                # Insert user skills
+                for skill_id in valid_skill_ids:
+                    UserSkillRepository.create(db, user.id, skill_id)
+
+        db.commit()
+        db.refresh(user)
+
+        return user
         
-        if unique_skill_ids:
-            # Verify all skill IDs exist before inserting
-            valid_skill_ids = SkillRepository.verify_skill_ids(db, unique_skill_ids)
-            
-            if len(valid_skill_ids) != len(unique_skill_ids):
-                invalid_ids = set(unique_skill_ids) - set(valid_skill_ids)
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid skill IDs: {sorted(list(invalid_ids))}"
-                )
-            
-            # Insert user skills
-            for skill_id in valid_skill_ids:
-                UserSkillRepository.create(db, user.id, skill_id)
-
-    db.commit()
-    db.refresh(user)
-
-    return user
+    except IntegrityError as e:
+        db.rollback()
+        # Check if it's a duplicate email error
+        if "unique constraint" in str(e).lower() and "email" in str(e).lower():
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered. Please use a different email or login."
+            )
+        # Other integrity errors
+        raise HTTPException(
+            status_code=400,
+            detail="Registration failed due to data constraint violation"
+        )
 
 
 async def get_user_profile(
