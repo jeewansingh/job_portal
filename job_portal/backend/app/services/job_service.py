@@ -13,7 +13,8 @@ from app.repositories.job_repository import (
     get_browse_jobs,
     update_job,
     delete_job,
-    close_job
+    close_job,
+    toggle_job_status
 )
 from app.repositories.job_skill_repository import (
     add_job_skills,
@@ -243,18 +244,18 @@ async def update_job_posting(
 
 
 async def close_job_posting(db: Session, job_id: int, recruiter_id: int):
-    """Close a job posting"""
+    """Toggle job status (close if open, reopen if closed)"""
     
     job = get_job_by_id(db, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
     if job.recruiter_id != recruiter_id:
-        raise HTTPException(status_code=403, detail="Not authorized to close this job")
+        raise HTTPException(status_code=403, detail="Not authorized to modify this job")
     
-    closed_job = close_job(db, job_id)
+    toggled_job = toggle_job_status(db, job_id)
     db.commit()
-    return closed_job
+    return {"message": "Job status updated successfully", "is_closed": toggled_job.is_closed}
 
 
 async def delete_job_posting(db: Session, job_id: int, recruiter_id: int):

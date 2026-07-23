@@ -1,20 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
-import { recruiterJobs } from "../../data/recruiterJobs";
+import { getRecruiterApplications, updateApplicationStatus } from "../../services/recruiter";
+import { getFileUrl } from "../../services/api";
 import "../../styles/RecruiterDashboard.css";
 import "../../styles/RecruiterJobs.css";
 
 const PAGE_SIZE = 10;
 
 const applicantStatusClassMap = {
-  Shortlisted: "recruiter-job-detail__applicant-badge--shortlisted",
-  Interview: "recruiter-job-detail__applicant-badge--interview",
-  Offer: "recruiter-job-detail__applicant-badge--offer",
-  Hired: "recruiter-job-detail__applicant-badge--hired",
-  Rejected: "recruiter-job-detail__applicant-badge--rejected",
-  "Under Review": "recruiter-job-detail__applicant-badge--review",
-  Closed: "recruiter-job-detail__applicant-badge--review",
+  SHORTLISTED: "recruiter-job-detail__applicant-badge--shortlisted",
+  INTERVIEW: "recruiter-job-detail__applicant-badge--interview",
+  OFFERED: "recruiter-job-detail__applicant-badge--offer",
+  HIRED: "recruiter-job-detail__applicant-badge--hired",
+  REJECTED: "recruiter-job-detail__applicant-badge--rejected",
+  UNDER_REVIEW: "recruiter-job-detail__applicant-badge--review",
 };
 
 const sortOptions = [
@@ -33,42 +33,45 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
-function normalizeApplicant(applicant, job) {
-  const matchScores = {
-    Shortlisted: 94,
-    Interview: 89,
-    Offer: 96,
-    Hired: 98,
-    Rejected: 61,
-    "Under Review": 82,
-  };
-  const status = applicant.status || applicant.stage || "Under Review";
-
-  return {
-    ...applicant,
-    jobId: job.id,
-    jobTitle: job.title,
-    company: job.company,
-    status,
-    matchScore: applicant.matchScore || `${matchScores[status] || 80}%`,
-  };
-}
-
 export default function RecruiterApplications() {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [jobTitleFilter, setJobTitleFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("latest");
   const [page, setPage] = useState(1);
-  const [applicationsById, setApplicationsById] = useState(() => {
-    const entries = recruiterJobs.flatMap((job) =>
-      (job.applicants || []).map((applicant) => normalizeApplicant(applicant, job))
-    );
 
-    return Object.fromEntries(entries.map((applicant) => [applicant.id, applicant]));
-  });
+  useEffect(() => {
+    loadApplications();
+  }, []);
 
-  const applications = useMemo(() => Object.values(applicationsById), [applicationsById]);
+  const loadApplications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getRecruiterApplications();
+      setApplications(data);
+    } catch (err) {
+      setError(err.message || "Failed to load applications");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplicationAction = async (applicationId, nextStatus) => {
+    try {
+      await updateApplicationStatus(applicationId, nextStatus);
+      setApplications((current) =>
+        current.map((app) =>
+          app.id === applicationId ? { ...app, status: nextStatus } : app
+        )
+      );
+    } catch (err) {
+      alert(err.message || "Failed to update application status");
+    }
+  };
 
   const filteredApplications = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -76,28 +79,28 @@ export default function RecruiterApplications() {
     const filtered = applications.filter((application) => {
       const matchesSearch =
         !query ||
-        application.name.toLowerCase().includes(query) ||
-        application.jobTitle.toLowerCase().includes(query) ||
-        application.company.toLowerCase().includes(query);
+        application.applicant_name.toLowerCase().includes(query) ||
+        application.job_title.toLowerCase().includes(query) ||
+        application.applicant_email.toLowerCase().includes(query);
       const matchesStatus = statusFilter === "All" || application.status === statusFilter;
       const matchesJobTitle =
-        jobTitleFilter === "All" || application.jobTitle === jobTitleFilter;
+        jobTitleFilter === "All" || application.job_title === jobTitleFilter;
       return matchesSearch && matchesStatus && matchesJobTitle;
     });
 
     return filtered.sort((a, b) => {
       switch (sortOrder) {
         case "oldest":
-          return new Date(a.appliedDate) - new Date(b.appliedDate);
+          return new Date(a.applied_at) - new Date(b.applied_at);
         case "name-asc":
-          return a.name.localeCompare(b.name);
+          return a.applicant_name.localeCompare(b.applicant_name);
         case "job-asc":
-          return a.jobTitle.localeCompare(b.jobTitle);
+          return a.job_title.localeCompare(b.job_title);
         case "score-desc":
-          return parseInt(b.matchScore, 10) - parseInt(a.matchScore, 10);
+          return b.match_score - a.match_score;
         case "latest":
         default:
-          return new Date(b.appliedDate) - new Date(a.appliedDate);
+          return new Date(b.applied_at) - new Date(a.applied_at);
       }
     });
   }, [applications, searchQuery, sortOrder, statusFilter, jobTitleFilter]);
@@ -116,19 +119,33 @@ export default function RecruiterApplications() {
   );
 
   const jobTitleOptions = useMemo(
-    () => ["All", ...new Set(applications.map((application) => application.jobTitle))],
+    () => ["All", ...new Set(applications.map((application) => application.job_title))],
     [applications]
   );
 
-  const handleApplicationAction = (applicationId, nextStatus) => {
-    setApplicationsById((currentMap) => ({
-      ...currentMap,
-      [applicationId]: {
-        ...currentMap[applicationId],
-        status: nextStatus,
-      },
-    }));
-  };
+  if (loading) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Applications" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: "2rem", textAlign: "center" }}>Loading applications...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Applications" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: "2rem", textAlign: "center", color: "red" }}>
+            Error: {error}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="recruiter-dashboard">
@@ -229,10 +246,9 @@ export default function RecruiterApplications() {
                   <tr>
                     <th>Applicant</th>
                     <th>Job Title</th>
-                    <th>Match Score</th>
                     <th>Resume</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th style={{ width: "280px", minWidth: "280px" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -240,25 +256,27 @@ export default function RecruiterApplications() {
                     <tr key={application.id}>
                       <td>
                         <div className="recruiter-job-detail__applicant-cell">
-                          <strong>{application.name}</strong>
+                          <strong>{application.applicant_name}</strong>
                         </div>
                       </td>
                       <td>
                         <div className="recruiter-manage-jobs__job-cell">
-                          <strong>{application.jobTitle}</strong>
+                          <strong>{application.job_title}</strong>
                         </div>
                       </td>
                       <td>
-                        <span className="recruiter-job-detail__match-score">{application.matchScore}</span>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="recruiter-job-detail__resume-btn"
-                          onClick={() => console.log("Download resume", application.resumeName)}
-                        >
-                          Download
-                        </button>
+                        {application.resume_url ? (
+                          <a
+                            href={getFileUrl(application.resume_url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="recruiter-job-detail__resume-btn"
+                          >
+                            Download
+                          </a>
+                        ) : (
+                          <span style={{ color: "#94a3b8" }}>No resume</span>
+                        )}
                       </td>
                       <td>
                         <span
@@ -267,13 +285,13 @@ export default function RecruiterApplications() {
                             "recruiter-job-detail__applicant-badge--review"
                           }`}
                         >
-                          {application.status}
+                          {application.status.replace(/_/g, " ")}
                         </span>
                       </td>
                       <td>
                         <div className="recruiter-job-detail__action-list">
                           <Link
-                            to={`/recruiter/applicants/${application.id}`}
+                            to={`/recruiter/applicants/${application.user_id}`}
                             className="recruiter-manage-jobs__action"
                           >
                             View
@@ -281,28 +299,28 @@ export default function RecruiterApplications() {
                           <button
                             type="button"
                             className="recruiter-manage-jobs__action recruiter-manage-jobs__action--warn"
-                            onClick={() => handleApplicationAction(application.id, "Interview")}
+                            onClick={() => handleApplicationAction(application.id, "INTERVIEW")}
                           >
                             Interview
                           </button>
                           <button
                             type="button"
                             className="recruiter-manage-jobs__action recruiter-manage-jobs__action--danger"
-                            onClick={() => handleApplicationAction(application.id, "Rejected")}
+                            onClick={() => handleApplicationAction(application.id, "REJECTED")}
                           >
                             Reject
                           </button>
                           <button
                             type="button"
                             className="recruiter-manage-jobs__action recruiter-manage-jobs__action--success"
-                            onClick={() => handleApplicationAction(application.id, "Offer")}
+                            onClick={() => handleApplicationAction(application.id, "OFFERED")}
                           >
                             Offer
                           </button>
                           <button
                             type="button"
                             className="recruiter-manage-jobs__action recruiter-manage-jobs__action--success"
-                            onClick={() => handleApplicationAction(application.id, "Hired")}
+                            onClick={() => handleApplicationAction(application.id, "HIRED")}
                           >
                             Hired
                           </button>

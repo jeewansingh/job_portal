@@ -75,6 +75,7 @@ class JobListItem(BaseModel):
     created_at: datetime
     is_closed: bool
     is_active: bool
+    application_count: int = 0
 
     class Config:
         from_attributes = True

@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
-import { recruiterJobs } from "../../data/recruiterJobs";
+import { getMyJobs, closeJob, deleteJob } from "../../services/recruiter";
 import "../../styles/RecruiterDashboard.css";
 import "../../styles/RecruiterJobs.css";
 
@@ -28,11 +28,66 @@ const formatDate = (value) =>
   }).format(new Date(value));
 
 export default function ManageJobs() {
-  const [jobs, setJobs] = useState(() => recruiterJobs);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("latest");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  const loadJobs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getMyJobs();
+      // Transform backend data to match UI expectations
+      const transformedJobs = data.map(job => ({
+        id: job.id,
+        title: job.job_title,
+        category: job.category,
+        location: job.location,
+        applications: job.application_count || 0,
+        status: job.is_closed ? "Closed" : "Active",
+        deadline: job.deadline,
+        postedDate: job.created_at,
+        company: job.company_name,
+      }));
+      setJobs(transformedJobs);
+    } catch (err) {
+      setError(err.message || "Failed to load jobs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = async (jobId) => {
+    try {
+      await closeJob(jobId);
+      setJobs((currentJobs) =>
+        currentJobs.map((job) => (job.id === jobId ? { ...job, status: "Closed" } : job))
+      );
+    } catch (err) {
+      alert(err.message || "Failed to close job");
+    }
+  };
+
+  const handleDelete = async (jobId) => {
+    if (!window.confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      await deleteJob(jobId);
+      setJobs((currentJobs) => currentJobs.filter((job) => job.id !== jobId));
+    } catch (err) {
+      alert(err.message || "Failed to delete job");
+    }
+  };
 
   const filteredJobs = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -86,15 +141,29 @@ export default function ManageJobs() {
     ];
   }, [jobs]);
 
-  const handleClose = (jobId) => {
-    setJobs((currentJobs) =>
-      currentJobs.map((job) => (job.id === jobId ? { ...job, status: "Closed" } : job))
+  if (loading) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Manage Jobs" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: "2rem", textAlign: "center" }}>Loading jobs...</div>
+        </main>
+      </div>
     );
-  };
+  }
 
-  const handleDelete = (jobId) => {
-    setJobs((currentJobs) => currentJobs.filter((job) => job.id !== jobId));
-  };
+  if (error) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Manage Jobs" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: "2rem", textAlign: "center", color: "red" }}>
+            Error: {error}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="recruiter-dashboard">

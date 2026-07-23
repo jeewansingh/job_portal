@@ -54,6 +54,7 @@ function normalizeSkill(value) {
 export default function PostJob() {
   const { user } = useUser();
   const navigate = useNavigate();
+  
   const [form, setForm] = useState(initialForm);
   const [availableSkills, setAvailableSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
@@ -205,10 +206,15 @@ export default function PostJob() {
       }
 
       // Call backend API
-      const response = await postJob(formData);
+      let response;
+      if (isEditMode) {
+        response = await updateJob(editJobId, formData);
+        console.log("Job updated successfully:", response);
+      } else {
+        response = await postJob(formData);
+        console.log("Job posted successfully:", response);
+      }
       
-      console.log("Job posted successfully:", response);
-
       setShowToast(true);
 
       if (toastTimerRef.current) {
@@ -217,11 +223,15 @@ export default function PostJob() {
 
       toastTimerRef.current = window.setTimeout(() => {
         setShowToast(false);
-        navigate("/recruiter/manage-jobs");
+        if (isEditMode) {
+          navigate(`/recruiter/jobs/${editJobId}`);
+        } else {
+          navigate("/recruiter/manage-jobs");
+        }
       }, 1200);
     } catch (err) {
-      console.error("Failed to post job:", err);
-      setError(err.message || "Failed to post job");
+      console.error("Failed to save job:", err);
+      setError(err.message || "Failed to save job");
       setLoading(false);
     }
   };

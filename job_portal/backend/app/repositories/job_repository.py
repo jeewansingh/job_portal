@@ -89,8 +89,46 @@ def get_job_details_with_company(db: Session, job_id: int) -> Optional[dict]:
 
 
 def get_jobs_by_recruiter(db: Session, recruiter_id: int, skip: int = 0, limit: int = 100) -> List[Job]:
-    """Get all jobs posted by a recruiter"""
-    return db.query(Job).filter(Job.recruiter_id == recruiter_id).offset(skip).limit(limit).all()
+    """Get all jobs posted by a recruiter with application counts"""
+    from sqlalchemy import func
+    from app.models.application import Application
+    
+    # Query jobs with application count
+    jobs = db.query(
+        Job,
+        func.count(Application.id).label('application_count')
+    ).outerjoin(
+        Application, Job.id == Application.job_id
+    ).filter(
+        Job.recruiter_id == recruiter_id
+    ).group_by(
+        Job.id
+    ).offset(skip).limit(limit).all()
+    
+    # Convert to list of dicts with application_count
+    result = []
+    for job, app_count in jobs:
+        job_dict = {
+            'id': job.id,
+            'job_title': job.job_title,
+            'category': job.category,
+            'employment_type': job.employment_type,
+            'experience_years': job.experience_years,
+            'salary_per_month': job.salary_per_month,
+            'openings': job.openings,
+            'location': job.location,
+            'job_description': job.job_description,
+            'job_specification': job.job_specification,
+            'deadline': job.deadline,
+            'created_at': job.created_at,
+            'updated_at': job.updated_at,
+            'is_closed': job.is_closed,
+            'is_active': job.is_active,
+            'application_count': app_count
+        }
+        result.append(job_dict)
+    
+    return result
 
 
 def get_all_active_jobs(db: Session, skip: int = 0, limit: int = 100) -> List[Job]:
@@ -127,6 +165,14 @@ def delete_job(db: Session, job_id: int) -> bool:
 def close_job(db: Session, job_id: int) -> Optional[Job]:
     """Close a job posting (mark as closed)"""
     return update_job(db, job_id, {"is_closed": True})
+
+
+def toggle_job_status(db: Session, job_id: int) -> Optional[Job]:
+    """Toggle job status between open and closed"""
+    job = get_job_by_id(db, job_id)
+    if not job:
+        return None
+    return update_job(db, job_id, {"is_closed": not job.is_closed})
 
 
 def get_browse_jobs(

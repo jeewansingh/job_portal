@@ -17,7 +17,17 @@ export async function postJob(formData) {
     return response.data;
   } catch (error) {
     if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
+      const detail = error.response.data.detail;
+      // Handle array of validation errors (FastAPI validation)
+      if (Array.isArray(detail)) {
+        const messages = detail.map(err => {
+          const field = err.loc ? err.loc.join('.') : 'field';
+          return `${field}: ${err.msg}`;
+        });
+        throw new Error(messages.join(', '));
+      }
+      // Handle string error
+      throw new Error(detail);
     }
     throw new Error(error.message || 'Failed to post job');
   }
@@ -87,7 +97,17 @@ export async function updateJob(jobId, formData) {
     return response.data;
   } catch (error) {
     if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
+      const detail = error.response.data.detail;
+      // Handle array of validation errors (FastAPI validation)
+      if (Array.isArray(detail)) {
+        const messages = detail.map(err => {
+          const field = err.loc ? err.loc.join('.') : 'field';
+          return `${field}: ${err.msg}`;
+        });
+        throw new Error(messages.join(', '));
+      }
+      // Handle string error
+      throw new Error(detail);
     }
     throw new Error(error.message || 'Failed to update job');
   }

@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import RecruiterSidebar from "../../components/recruiter/RecruiterSidebar";
-import { recruiterJobs } from "../../data/recruiterJobs";
+import { getApplicantProfile, updateApplicationStatus } from "../../services/recruiter";
+import { getFileUrl } from "../../services/api";
 import "../../styles/RecruiterDashboard.css";
 import "../../styles/RecruiterJobs.css";
 
 const applicantStatusClassMap = {
-  Shortlisted: "recruiter-job-detail__applicant-badge--shortlisted",
-  Interview: "recruiter-job-detail__applicant-badge--interview",
-  Offer: "recruiter-job-detail__applicant-badge--offer",
-  Hired: "recruiter-job-detail__applicant-badge--hired",
-  Rejected: "recruiter-job-detail__applicant-badge--rejected",
-  "Under Review": "recruiter-job-detail__applicant-badge--review",
-  Closed: "recruiter-job-detail__applicant-badge--review",
+  SHORTLISTED: "recruiter-job-detail__applicant-badge--shortlisted",
+  INTERVIEW: "recruiter-job-detail__applicant-badge--interview",
+  OFFER: "recruiter-job-detail__applicant-badge--offer",
+  HIRED: "recruiter-job-detail__applicant-badge--hired",
+  REJECTED: "recruiter-job-detail__applicant-badge--rejected",
+  UNDER_REVIEW: "recruiter-job-detail__applicant-badge--review",
 };
 
-const statusOptions = ["Under Review", "Shortlisted", "Interview", "Offer", "Hired", "Rejected", "Closed"];
+const statusOptions = ["UNDER_REVIEW", "INTERVIEW", "OFFERED", "HIRED", "REJECTED"];
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-US", {
@@ -39,41 +39,84 @@ export default function RecruiterApplicantProfile() {
   const { applicantId } = useParams();
   const navigate = useNavigate();
 
-  const applicantMatch = useMemo(
-    () =>
-      recruiterJobs
-        .flatMap((job) => (job.applicants || []).map((applicant) => ({ ...applicant, job })))
-        .find((applicant) => String(applicant.id) === String(applicantId)) || null,
-    [applicantId]
-  );
-
-  const [status, setStatus] = useState(applicantMatch?.status || applicantMatch?.stage || "Under Review");
+  const [applicant, setApplicant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState({});
 
   useEffect(() => {
-    if (!applicantMatch) return;
-    setStatus(applicantMatch.status || applicantMatch.stage || "Under Review");
-  }, [applicantMatch]);
+    loadApplicantProfile();
+  }, [applicantId]);
 
-  if (!applicantMatch) {
+  const loadApplicantProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getApplicantProfile(parseInt(applicantId));
+      setApplicant(data);
+      
+      // Initialize selected status for each application
+      const statusMap = {};
+      data.applications.forEach(app => {
+        statusMap[app.application_id] = app.status;
+      });
+      setSelectedStatus(statusMap);
+    } catch (err) {
+      setError(err.message || "Failed to load applicant profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (applicationId, newStatus) => {
+    try {
+      await updateApplicationStatus(applicationId, newStatus);
+      setSelectedStatus(prev => ({
+        ...prev,
+        [applicationId]: newStatus
+      }));
+      // Update the application status in the applicant data
+      setApplicant(prev => ({
+        ...prev,
+        applications: prev.applications.map(app =>
+          app.application_id === applicationId ? { ...app, status: newStatus } : app
+        )
+      }));
+    } catch (err) {
+      alert(err.message || "Failed to update status");
+    }
+  };
+
+  if (loading) {
     return (
       <div className="recruiter-dashboard">
         <RecruiterSidebar activeItem="Manage Jobs" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: "2rem", textAlign: "center" }}>Loading applicant profile...</div>
+        </main>
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Manage Jobs" />
         <main className="recruiter-dashboard__main">
           <section className="recruiter-dashboard__hero">
             <div>
               <span className="recruiter-dashboard__eyebrow">Recruiter Dashboard</span>
-              <h1 className="recruiter-dashboard__title">Applicant not found</h1>
-              <p className="recruiter-dashboard__subtitle">
-                The selected applicant is not available in the current demo dataset.
-              </p>
+              <h1 className="recruiter-dashboard__title">Access Denied</h1>
+              <p className="recruiter-dashboard__subtitle">{error}</p>
             </div>
-
             <div className="recruiter-dashboard__hero-side">
               <div className="recruiter-dashboard__hero-actions">
-                <Link to="/recruiter/manage-jobs" className="recruiter-dashboard__primary-action">
-                  Back to Manage Jobs
-                </Link>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="recruiter-dashboard__primary-action"
+                >
+                  Go Back
+                </button>
               </div>
             </div>
           </section>
@@ -82,16 +125,21 @@ export default function RecruiterApplicantProfile() {
     );
   }
 
-  const { job } = applicantMatch;
-  const applicant = {
-    ...applicantMatch,
-    status: status || applicantMatch.status || applicantMatch.stage || "Under Review",
-  };
+  if (!applicant) {
+    return (
+      <div className="recruiter-dashboard">
+        <RecruiterSidebar activeItem="Manage Jobs" />
+        <main className="recruiter-dashboard__main">
+          <div style={{ padding: "2rem", textAlign: "center" }}>Applicant not found</div>
+        </main>
+      </div>
+    );
+  }
 
-  const matchScore = applicant.matchScore || "85%";
-  const profileImage = applicant.profilePicture || "";
-  const profileInitials = getInitials(applicant.name);
-  const scoreValue = Number.parseInt(matchScore, 10) || 85;
+  const profileImage = applicant.profile_picture_url ? getFileUrl(applicant.profile_picture_url) : "";
+  const profileInitials = getInitials(applicant.full_name);
+  const matchScore = 85; // Default score, can be enhanced later
+  const scoreValue = matchScore;
 
   return (
     <div className="recruiter-dashboard">
@@ -110,35 +158,26 @@ export default function RecruiterApplicantProfile() {
           <div className="recruiter-dashboard__hero">
             <div>
               <span className="recruiter-dashboard__eyebrow">Applicant Profile</span>
-              <h1 className="recruiter-dashboard__title">{applicant.name}</h1>
+              <h1 className="recruiter-dashboard__title">{applicant.full_name}</h1>
               <p className="recruiter-dashboard__subtitle">
-                Applied for {job.title} at {job.company}
+                Applied to {applicant.applications.length} job{applicant.applications.length !== 1 ? 's' : ''}
               </p>
               <div className="recruiter-job-detail__meta-row">
-                <span
-                  className={
-                    applicantStatusClassMap[applicant.status] ||
-                    "recruiter-job-detail__applicant-badge--review"
-                  }
-                >
-                  {applicant.status}
-                </span>
+                {applicant.applications.map((app) => (
+                  <span
+                    key={app.application_id}
+                    className={
+                      applicantStatusClassMap[app.status] ||
+                      "recruiter-job-detail__applicant-badge--review"
+                    }
+                  >
+                    {app.job_title}: {app.status.replace(/_/g, " ")}
+                  </span>
+                ))}
               </div>
             </div>
 
             <div className="recruiter-dashboard__hero-side">
-              <div
-                className="recruiter-applicant-profile__score-ring"
-                aria-label={`Match score ${matchScore}`}
-                style={{
-                  background: `conic-gradient(var(--primary) 0deg, var(--primary) ${scoreValue * 3.6}deg, rgba(148, 163, 184, 0.22) ${scoreValue * 3.6}deg)`,
-                }}
-              >
-                <div className="recruiter-applicant-profile__score-ring-inner">
-                  <strong>{matchScore}</strong>
-                  <span>Match</span>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -159,25 +198,37 @@ export default function RecruiterApplicantProfile() {
               <span className="recruiter-applicant-profile__field-label">Profile Picture</span>
               <div className="recruiter-applicant-profile__avatar">
                 {profileImage ? (
-                  <img src={profileImage} alt={`${applicant.name} profile`} />
+                  <img src={profileImage} alt={`${applicant.full_name} profile`} />
                 ) : (
                   <span>{profileInitials}</span>
                 )}
               </div>
-              <button
-                type="button"
-                className="recruiter-dashboard__primary-action recruiter-applicant-profile__download-btn"
-                onClick={() => console.log("Download resume", applicant.resumeName)}
-              >
-                Download Resume
-              </button>
+              {applicant.resume_url ? (
+                <a
+                  href={getFileUrl(applicant.resume_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="recruiter-dashboard__primary-action recruiter-applicant-profile__download-btn"
+                >
+                  Download Resume
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="recruiter-dashboard__primary-action recruiter-applicant-profile__download-btn"
+                  disabled
+                  style={{ opacity: 0.5, cursor: "not-allowed" }}
+                >
+                  No Resume
+                </button>
+              )}
             </div>
 
             <div className="recruiter-applicant-profile__intro">
               <div className="recruiter-job-detail__info-grid recruiter-applicant-profile__grid">
                 <div className="recruiter-job-detail__info-item">
                   <span>Full Name</span>
-                  <strong>{applicant.name}</strong>
+                  <strong>{applicant.full_name}</strong>
                 </div>
                 <div className="recruiter-job-detail__info-item">
                   <span>Gender</span>
@@ -198,7 +249,7 @@ export default function RecruiterApplicantProfile() {
                 </div>
                 <div className="recruiter-job-detail__info-item recruiter-applicant-profile__field--wide">
                   <span>Address</span>
-                  <strong>{applicant.location}</strong>
+                  <strong>{applicant.address}</strong>
                 </div>
                 <div className="recruiter-job-detail__info-item">
                   <span>Email</span>
@@ -212,64 +263,78 @@ export default function RecruiterApplicantProfile() {
                 <div className="recruiter-job-detail__info-item recruiter-applicant-profile__field--wide">
                   <span>Skills</span>
                   <div className="recruiter-job-detail__tag-list">
-                    {(applicant.skills || job.skills || []).map((skill) => (
-                      <span key={skill} className="recruiter-pill">
-                        {skill}
-                      </span>
-                    ))}
+                    {applicant.skills.length > 0 ? (
+                      applicant.skills.map((skill) => (
+                        <span key={skill} className="recruiter-pill">
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
+                      <span>No skills listed</span>
+                    )}
                   </div>
                 </div>
                 <div className="recruiter-job-detail__info-item">
                   <span>Education</span>
-                  <strong>{applicant.education}</strong>
+                  <strong>{applicant.education || "Not provided"}</strong>
                 </div>
                 <div className="recruiter-job-detail__info-item">
                   <span>Experience</span>
-                  <strong>{applicant.experience}</strong>
+                  <strong>{applicant.experience_years ? `${applicant.experience_years} years` : "Not provided"}</strong>
+                </div>
+                <div className="recruiter-job-detail__info-item">
+                  <span>Desired Position</span>
+                  <strong>{applicant.desired_position || "Not provided"}</strong>
+                </div>
+                <div className="recruiter-job-detail__info-item">
+                  <span>Preferred Job Type</span>
+                  <strong>{applicant.preferred_job_type || "Not provided"}</strong>
                 </div>
                 <div className="recruiter-job-detail__info-item recruiter-applicant-profile__field--wide">
                   <span>Portfolio Link</span>
                   <strong>
-                    <a href={applicant.portfolioLink} target="_blank" rel="noreferrer">
-                      {applicant.portfolioLink}
-                    </a>
+                    {applicant.portfolio_link ? (
+                      <a href={applicant.portfolio_link} target="_blank" rel="noreferrer">
+                        {applicant.portfolio_link}
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
                   </strong>
-                </div>
-                <div className="recruiter-job-detail__info-item">
-                  <span>Applied Date</span>
-                  <strong>{formatDate(applicant.appliedDate)}</strong>
-                </div>
-                <div className="recruiter-job-detail__info-item">
-                  <span>Applied For</span>
-                  <strong>
-                    {job.title} {job.company ? `· ${job.company}` : ""}
-                  </strong>
-                </div>
-                <div className="recruiter-job-detail__info-item">
-                  <span>Match Score</span>
-                  <strong>{matchScore}</strong>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="recruiter-applicant-profile__status-block">
-            <span className="recruiter-applicant-profile__field-label">Status</span>
-            <div className="recruiter-applicant-profile__status-chips">
-              {statusOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={`recruiter-applicant-profile__status-chip ${
-                    option === status ? "recruiter-applicant-profile__status-chip--active" : ""
-                  }`}
-                  aria-pressed={option === status}
-                  onClick={() => setStatus(option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
+            <span className="recruiter-applicant-profile__field-label">Application Status Management</span>
+            {applicant.applications.map((app) => (
+              <div key={app.application_id} style={{ marginBottom: "1.5rem" }}>
+                <h4 style={{ marginBottom: "0.5rem", color: "var(--text)" }}>
+                  {app.job_title}
+                  <span style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginLeft: "0.5rem" }}>
+                    (Applied: {formatDate(app.applied_at)})
+                  </span>
+                </h4>
+                <div className="recruiter-applicant-profile__status-chips">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`recruiter-applicant-profile__status-chip ${
+                        option === selectedStatus[app.application_id]
+                          ? "recruiter-applicant-profile__status-chip--active"
+                          : ""
+                      }`}
+                      aria-pressed={option === selectedStatus[app.application_id]}
+                      onClick={() => handleStatusChange(app.application_id, option)}
+                    >
+                      {option.replace(/_/g, " ")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
         </section>
